@@ -35,6 +35,10 @@
         <activity
             android:name=".SystemMessagesActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".EventHistoryActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

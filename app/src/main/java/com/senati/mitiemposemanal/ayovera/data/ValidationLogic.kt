@@ -72,5 +72,13 @@ object ValidationLogic {
         }
         return null
     }
+
+    /**
+     * Regla HU-03: Con menos de 2 caracteres útiles no se muestran coincidencias de búsqueda;
+     * desde 2 caracteres se consulta SQLite.
+     */
+    fun esConsultaBusquedaValida(queryRaw: String): Boolean {
+        return normalizarNombre(queryRaw).length >= 2
+    }
 }
 

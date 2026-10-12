@@ -6,10 +6,15 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -28,20 +33,28 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.senati.mitiemposemanal.ayovera.data.AdminSQLiteOpenHelper
 import com.senati.mitiemposemanal.ayovera.data.ResultadoEliminacionCategoria
+import com.senati.mitiemposemanal.ayovera.data.ResultadoEvento
 import com.senati.mitiemposemanal.ayovera.data.ResultadoOperacion
 import com.senati.mitiemposemanal.ayovera.data.ValidationLogic
 import com.senati.mitiemposemanal.ayovera.model.Categoria
+import com.senati.mitiemposemanal.ayovera.model.Evento
 import com.senati.mitiemposemanal.ayovera.model.Tarea
 import com.senati.mitiemposemanal.ayovera.ui.CategoryAdapter
+import com.senati.mitiemposemanal.ayovera.ui.CategoryVisualStyle
 import com.senati.mitiemposemanal.ayovera.ui.DialogHelper
+import com.senati.mitiemposemanal.ayovera.ui.EventHistoryAdapter
+import com.senati.mitiemposemanal.ayovera.ui.EventTaskSearchAdapter
 import com.senati.mitiemposemanal.ayovera.ui.TaskAdapter
+import java.time.LocalDateTime
 
 /**
- * Actividad principal de MiTiempoSemanal (Sprint 1 SENATI).
+ * Actividad principal de MiTiempoSemanal (Sprints 1 y 2 SENATI).
  * Integra la navegación entre:
- * - Pantalla 1: Inicio (Dashboard, nombre de la app, estudiante · v0.1.0 (1), accesos rápidos, categorías iniciales y vista previa de tareas)
- * - Pantalla 2: Mis Categorías (HU-01: lista, creación, edición, confirmación de eliminación y bloqueo si tiene tareas)
- * - Pantalla 5: Mis Tareas y Estado Vacío (HU-02: lista "Tarea · Categoría", filtros por categoría, estado vacío, creación, edición y eliminación)
+ * - Pantalla 1: Inicio (Dashboard, nombre de la app, estudiante · v0.2.0 (2), accesos rápidos, categorías iniciales y vista previa de tareas)
+ * - Pantalla 2: Mis Categorías (HU-01)
+ * - Pantalla 5: Mis Tareas y Estado Vacío (HU-02)
+ * - Pantallas 10, 11, 12, 13, 14 y 15: Eventos, Búsqueda en Tiempo Real (HU-03), Crear Tarea desde Eventos (HU-04),
+ *   Evento en Curso e Inicio/Fin de Eventos con Persistencia en SQLite (HU-05) e Historial de Eventos.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -58,6 +71,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewHome: NestedScrollView
     private lateinit var viewCategories: NestedScrollView
     private lateinit var viewTasks: NestedScrollView
+    private lateinit var viewEvents: NestedScrollView
     private lateinit var fabMain: FloatingActionButton
     private lateinit var bottomNav: BottomNavigationView
 
@@ -88,11 +102,62 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvEmptyStateTitle: TextView
     private lateinit var tvEmptyStateDesc: TextView
 
+    // Pantallas 10, 11 y 13: Eventos Views
+    private lateinit var llEventsSearchLockedBanner: LinearLayout
+    private lateinit var llEventSearchInputBox: LinearLayout
+    private lateinit var etEventTaskSearch: EditText
+    private lateinit var btnClearEventSearch: ImageButton
+    private lateinit var tvEventSearchHelper: TextView
+    private lateinit var rvEventSearchMatches: RecyclerView
+    private lateinit var cardEventSearchNoResults: MaterialCardView
+    private lateinit var tvEventSearchNoResultsTitle: TextView
+    private lateinit var btnQuickCreateFromSearch: MaterialButton
+    private lateinit var cardSelectedTaskPreview: MaterialCardView
+    private lateinit var tvSelectedTaskCategoryBadge: TextView
+    private lateinit var tvSelectedTaskPreviewTitle: TextView
+    private lateinit var btnStartEvent: MaterialButton
+
+    private lateinit var tvEventLiveStatusBadge: TextView
+    private lateinit var cardEventIdleState: MaterialCardView
+    private lateinit var cardEventActiveState: MaterialCardView
+    private lateinit var viewActiveEventStripe: View
+    private lateinit var llActiveEventCategoryBadge: LinearLayout
+    private lateinit var ivActiveEventCategoryIcon: ImageView
+    private lateinit var tvActiveEventCategoryChip: TextView
+    private lateinit var tvActiveEventIdBadge: TextView
+    private lateinit var tvActiveEventTaskTitle: TextView
+    private lateinit var tvActiveEventTaskSubtitle: TextView
+    private lateinit var tvActiveEventTimerDisplay: TextView
+    private lateinit var tvActiveEventStartDate: TextView
+    private lateinit var tvActiveEventStartTime: TextView
+    private lateinit var btnStopEvent: MaterialButton
+
+    private lateinit var btnViewFullEventHistory: TextView
+    private lateinit var rvRecentEvents: RecyclerView
+    private lateinit var cardEmptyRecentEvents: MaterialCardView
+
     // Adapters & State
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var taskAdapter: TaskAdapter
     private lateinit var homePreviewTaskAdapter: TaskAdapter
+    private lateinit var eventTaskSearchAdapter: EventTaskSearchAdapter
+    private lateinit var recentEventsAdapter: EventHistoryAdapter
+
     private var filtroCategoriaIdTarea: Long? = null
+    private var tareaSeleccionadaEnEventos: Tarea? = null
+    private var actualizandoTextoPorSeleccion: Boolean = false
+
+    private val timerHandler = Handler(Looper.getMainLooper())
+    private val timerRunnable = object : Runnable {
+        override fun run() {
+            val activo = dbHelper.obtenerEventoActivo()
+            if (activo != null) {
+                val segundos = activo.obtenerSegundosTranscurridos(LocalDateTime.now())
+                tvActiveEventTimerDisplay.text = Evento.formatearCronometro(segundos)
+                timerHandler.postDelayed(this, 1000L)
+            }
+        }
+    }
 
     private val formActivityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -124,6 +189,7 @@ class MainActivity : AppCompatActivity() {
         inicializarVistas()
         configurarRecyclerViews()
         configurarNavegacionYBotones()
+        configurarEventosYBusquedaEnTiempoReal()
         actualizarCabeceraEstudianteYVersion()
         recargarDatosYActualizarUI()
     }
@@ -133,11 +199,19 @@ class MainActivity : AppCompatActivity() {
         recargarDatosYActualizarUI()
     }
 
+    override fun onPause() {
+        super.onPause()
+        // El evento activo NO se finaliza al pasar a segundo plano (Sección 7);
+        // solo se pausa el refresco visual de la vista mientras no está en pantalla.
+        timerHandler.removeCallbacks(timerRunnable)
+    }
+
     private fun inicializarVistas() {
         tvTopAppSubtitle = findViewById(R.id.tvTopAppSubtitle)
         viewHome = findViewById(R.id.viewHome)
         viewCategories = findViewById(R.id.viewCategories)
         viewTasks = findViewById(R.id.viewTasks)
+        viewEvents = findViewById(R.id.viewEvents)
         fabMain = findViewById(R.id.fabMain)
         bottomNav = findViewById(R.id.bottomNav)
 
@@ -167,6 +241,40 @@ class MainActivity : AppCompatActivity() {
         cardEmptyTasksState = findViewById(R.id.cardEmptyTasksState)
         tvEmptyStateTitle = findViewById(R.id.tvEmptyStateTitle)
         tvEmptyStateDesc = findViewById(R.id.tvEmptyStateDesc)
+
+        // Pantallas 10, 11 y 13 (Eventos)
+        llEventsSearchLockedBanner = findViewById(R.id.llEventsSearchLockedBanner)
+        llEventSearchInputBox = findViewById(R.id.llEventSearchInputBox)
+        etEventTaskSearch = findViewById(R.id.etEventTaskSearch)
+        btnClearEventSearch = findViewById(R.id.btnClearEventSearch)
+        tvEventSearchHelper = findViewById(R.id.tvEventSearchHelper)
+        rvEventSearchMatches = findViewById(R.id.rvEventSearchMatches)
+        cardEventSearchNoResults = findViewById(R.id.cardEventSearchNoResults)
+        tvEventSearchNoResultsTitle = findViewById(R.id.tvEventSearchNoResultsTitle)
+        btnQuickCreateFromSearch = findViewById(R.id.btnQuickCreateFromSearch)
+        cardSelectedTaskPreview = findViewById(R.id.cardSelectedTaskPreview)
+        tvSelectedTaskCategoryBadge = findViewById(R.id.tvSelectedTaskCategoryBadge)
+        tvSelectedTaskPreviewTitle = findViewById(R.id.tvSelectedTaskPreviewTitle)
+        btnStartEvent = findViewById(R.id.btnStartEvent)
+
+        tvEventLiveStatusBadge = findViewById(R.id.tvEventLiveStatusBadge)
+        cardEventIdleState = findViewById(R.id.cardEventIdleState)
+        cardEventActiveState = findViewById(R.id.cardEventActiveState)
+        viewActiveEventStripe = findViewById(R.id.viewActiveEventStripe)
+        llActiveEventCategoryBadge = findViewById(R.id.llActiveEventCategoryBadge)
+        ivActiveEventCategoryIcon = findViewById(R.id.ivActiveEventCategoryIcon)
+        tvActiveEventCategoryChip = findViewById(R.id.tvActiveEventCategoryChip)
+        tvActiveEventIdBadge = findViewById(R.id.tvActiveEventIdBadge)
+        tvActiveEventTaskTitle = findViewById(R.id.tvActiveEventTaskTitle)
+        tvActiveEventTaskSubtitle = findViewById(R.id.tvActiveEventTaskSubtitle)
+        tvActiveEventTimerDisplay = findViewById(R.id.tvActiveEventTimerDisplay)
+        tvActiveEventStartDate = findViewById(R.id.tvActiveEventStartDate)
+        tvActiveEventStartTime = findViewById(R.id.tvActiveEventStartTime)
+        btnStopEvent = findViewById(R.id.btnStopEvent)
+
+        btnViewFullEventHistory = findViewById(R.id.btnViewFullEventHistory)
+        rvRecentEvents = findViewById(R.id.rvRecentEvents)
+        cardEmptyRecentEvents = findViewById(R.id.cardEmptyRecentEvents)
     }
 
     private fun configurarRecyclerViews() {
@@ -193,6 +301,27 @@ class MainActivity : AppCompatActivity() {
         )
         rvHomePreviewTasks.layoutManager = LinearLayoutManager(this)
         rvHomePreviewTasks.adapter = homePreviewTaskAdapter
+
+        eventTaskSearchAdapter = EventTaskSearchAdapter(
+            tareas = emptyList(),
+            tareaSeleccionadaId = null,
+            onTareaSeleccionada = { tarea -> seleccionarTareaEnEventos(tarea) }
+        )
+        rvEventSearchMatches.layoutManager = LinearLayoutManager(this)
+        rvEventSearchMatches.itemAnimator = null
+        rvEventSearchMatches.isFocusable = false
+        rvEventSearchMatches.isFocusableInTouchMode = false
+        rvEventSearchMatches.adapter = eventTaskSearchAdapter
+
+        recentEventsAdapter = EventHistoryAdapter(
+            eventos = emptyList(),
+            onEventoClick = { abrirHistorialCompletoEventos() }
+        )
+        rvRecentEvents.layoutManager = LinearLayoutManager(this)
+        rvRecentEvents.itemAnimator = null
+        rvRecentEvents.isFocusable = false
+        rvRecentEvents.isFocusableInTouchMode = false
+        rvRecentEvents.adapter = recentEventsAdapter
     }
 
     private fun configurarNavegacionYBotones() {
@@ -208,6 +337,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.nav_tasks -> {
                     mostrarSeccion(SeccionActiva.TAREAS)
+                    true
+                }
+                R.id.nav_events -> {
+                    mostrarSeccion(SeccionActiva.EVENTOS)
                     true
                 }
                 else -> false
@@ -274,6 +407,338 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // =========================================================================
+    // CONFIGURACIÓN DE EVENTOS, BÚSQUEDA EN TIEMPO REAL E INICIO/FIN (SPRINT 2)
+    // =========================================================================
+
+    private fun configurarEventosYBusquedaEnTiempoReal() {
+        llEventSearchInputBox.setOnClickListener {
+            etEventTaskSearch.requestFocus()
+        }
+
+        etEventTaskSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+
+            override fun afterTextChanged(s: Editable?) {
+                val textoRaw = s?.toString().orEmpty()
+                btnClearEventSearch.visibility = if (textoRaw.isNotEmpty()) View.VISIBLE else View.GONE
+
+                if (actualizandoTextoPorSeleccion) return
+
+                val sel = tareaSeleccionadaEnEventos
+                if (sel != null && !ValidationLogic.sonNombresEquivalentes(textoRaw, sel.nombre)) {
+                    tareaSeleccionadaEnEventos = null
+                    cardSelectedTaskPreview.visibility = View.GONE
+                }
+
+                actualizarResultadosBusquedaEventos(textoRaw)
+            }
+        })
+
+        btnClearEventSearch.setOnClickListener {
+            tareaSeleccionadaEnEventos = null
+            cardSelectedTaskPreview.visibility = View.GONE
+            etEventTaskSearch.setText("")
+            etEventTaskSearch.requestFocus()
+        }
+
+        btnStartEvent.setOnClickListener {
+            manejarClickIniciarEvento()
+        }
+
+        btnQuickCreateFromSearch.setOnClickListener {
+            manejarClickIniciarEvento()
+        }
+
+        btnStopEvent.setOnClickListener {
+            manejarClickFinalizarEvento()
+        }
+
+        btnViewFullEventHistory.setOnClickListener {
+            abrirHistorialCompletoEventos()
+        }
+    }
+
+    /**
+     * HU-03: Actualiza en tiempo real los resultados de búsqueda según el texto introducido.
+     * - Con menos de 2 caracteres útiles, no muestra coincidencias de búsqueda.
+     * - Desde 2 caracteres, consulta SQLite con LIKE ? parametrizado.
+     */
+    private fun actualizarResultadosBusquedaEventos(textoRaw: String) {
+        val limpio = ValidationLogic.normalizarNombre(textoRaw)
+
+        if (!ValidationLogic.esConsultaBusquedaValida(limpio)) {
+            rvEventSearchMatches.visibility = View.GONE
+            cardEventSearchNoResults.visibility = View.GONE
+            eventTaskSearchAdapter.actualizarResultados(emptyList(), tareaSeleccionadaEnEventos?.id)
+            tvEventSearchHelper.text = getString(R.string.events_search_helper_short)
+            tvEventSearchHelper.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
+            return
+        }
+
+        val coincidencias = dbHelper.buscarTareasPorTexto(limpio)
+        if (coincidencias.isNotEmpty()) {
+            rvEventSearchMatches.visibility = View.VISIBLE
+            cardEventSearchNoResults.visibility = View.GONE
+            eventTaskSearchAdapter.actualizarResultados(coincidencias, tareaSeleccionadaEnEventos?.id)
+            val cant = coincidencias.size
+            tvEventSearchHelper.text = if (cant == 1) {
+                "1 coincidencia encontrada · Selecciona la tarea o pulsa Iniciar"
+            } else {
+                "$cant coincidencias encontradas · Selecciona una tarea"
+            }
+            tvEventSearchHelper.setTextColor(ContextCompat.getColor(this, R.color.secondary))
+        } else {
+            rvEventSearchMatches.visibility = View.GONE
+            eventTaskSearchAdapter.actualizarResultados(emptyList(), null)
+            cardEventSearchNoResults.visibility = View.VISIBLE
+            tvEventSearchNoResultsTitle.text = "No se encontraron tareas con “$limpio”"
+            tvEventSearchHelper.text = "0 coincidencias · Pulsa Iniciar para crear “$limpio” y elegir su categoría"
+            tvEventSearchHelper.setTextColor(ContextCompat.getColor(this, R.color.error))
+        }
+    }
+
+    /**
+     * HU-03 puntos 8 y 9: Al seleccionar una tarea de los resultados, queda claramente identificada
+     * en la pantalla Eventos lista para iniciar su cronómetro.
+     */
+    private fun seleccionarTareaEnEventos(tarea: Tarea) {
+        tareaSeleccionadaEnEventos = tarea
+        actualizandoTextoPorSeleccion = true
+        etEventTaskSearch.setText(tarea.nombre)
+        etEventTaskSearch.setSelection(etEventTaskSearch.text.length)
+        actualizandoTextoPorSeleccion = false
+
+        cardSelectedTaskPreview.visibility = View.VISIBLE
+        tvSelectedTaskCategoryBadge.text = "Categoría: ${tarea.categoriaNombre}"
+        tvSelectedTaskPreviewTitle.text = tarea.textoConCategoria
+
+        actualizarResultadosBusquedaEventos(tarea.nombre)
+    }
+
+    /**
+     * HU-04 y HU-05: Maneja la pulsación del botón Iniciar en la pantalla Eventos.
+     * - Si ya hay un evento en curso, impide iniciar otro.
+     * - Si hay una tarea seleccionada o el texto escrito coincide con una tarea existente en SQLite,
+     *   inicia directamente el evento para esa tarea.
+     * - Si el usuario escribió el nombre de una tarea que no existe, abre la hoja inferior (Pantalla 12)
+     *   para elegir una categoría existente, guardar la tarea en SQLite e iniciar inmediatamente el evento.
+     */
+    private fun manejarClickIniciarEvento() {
+        val activo = dbHelper.obtenerEventoActivo()
+        if (activo != null) {
+            DialogHelper.mostrarSnackbarError(
+                rootMain,
+                "Ya existe un evento en curso (“${activo.tareaNombre}”). Finalízalo antes de iniciar otro."
+            )
+            sincronizarEstadoEventoActivoYRecientes()
+            return
+        }
+
+        val textoEscrito = ValidationLogic.normalizarNombre(etEventTaskSearch.text?.toString().orEmpty())
+        val seleccionada = tareaSeleccionadaEnEventos
+
+        // 1. Si el usuario seleccionó una tarea de la lista y el texto coincide (o no lo borró)
+        if (seleccionada != null &&
+            (textoEscrito.isEmpty() || ValidationLogic.sonNombresEquivalentes(textoEscrito, seleccionada.nombre))
+        ) {
+            iniciarEventoParaTareaExistente(seleccionada)
+            return
+        }
+
+        // 2. Validar que haya escrito un nombre si no seleccionó ninguna tarea
+        if (textoEscrito.isEmpty()) {
+            DialogHelper.mostrarSnackbarError(
+                rootMain,
+                "Escribe o selecciona una tarea antes de pulsar Iniciar."
+            )
+            etEventTaskSearch.requestFocus()
+            return
+        }
+
+        // 3. Requisito HU-04.10: Comprobar en la base de datos si ya existe una tarea con ese nombre
+        //    aunque el usuario no haya tocado la lista de sugerencias
+        val tareaExistenteEnDb = dbHelper.obtenerTareaPorNombreExacto(textoEscrito)
+        if (tareaExistenteEnDb != null) {
+            seleccionarTareaEnEventos(tareaExistenteEnDb)
+            iniciarEventoParaTareaExistente(tareaExistenteEnDb)
+            return
+        }
+
+        // 4. La tarea no existe: solicitar categoría con el componente de Stitch (Pantalla 12)
+        val categorias = dbHelper.listarCategorias()
+        DialogHelper.mostrarHojaCrearTareaDesdeEventos(
+            context = this,
+            nombreInicial = textoEscrito,
+            categorias = categorias,
+            onCrearEIniciar = { nombreInput, categoriaIdSeleccionada ->
+                dbHelper.crearTareaEIniciarEvento(
+                    nombreTareaInput = nombreInput,
+                    categoriaId = categoriaIdSeleccionada,
+                    fechaInicio = LocalDateTime.now()
+                )
+            },
+            onExito = { eventoIniciado, mensaje ->
+                limpiarBuscadorEventosTrasIniciar()
+                recargarDatosYActualizarUI()
+                DialogHelper.mostrarSnackbarExito(
+                    rootMain,
+                    "Tarea “${eventoIniciado.textoTareaConCategoria}” creada y evento iniciado."
+                )
+            }
+        )
+    }
+
+    private fun iniciarEventoParaTareaExistente(tarea: Tarea) {
+        when (val res = dbHelper.iniciarEvento(tarea.id, LocalDateTime.now())) {
+            is ResultadoEvento.Exito -> {
+                limpiarBuscadorEventosTrasIniciar()
+                recargarDatosYActualizarUI()
+                DialogHelper.mostrarSnackbarExito(rootMain, res.mensaje)
+            }
+            is ResultadoEvento.Error -> {
+                DialogHelper.mostrarSnackbarError(rootMain, res.mensaje)
+                sincronizarEstadoEventoActivoYRecientes()
+            }
+        }
+    }
+
+    private fun limpiarBuscadorEventosTrasIniciar() {
+        tareaSeleccionadaEnEventos = null
+        cardSelectedTaskPreview.visibility = View.GONE
+        actualizandoTextoPorSeleccion = true
+        etEventTaskSearch.setText("")
+        actualizandoTextoPorSeleccion = false
+        rvEventSearchMatches.visibility = View.GONE
+        cardEventSearchNoResults.visibility = View.GONE
+        tvEventSearchHelper.text = getString(R.string.events_search_helper_short)
+        tvEventSearchHelper.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
+    }
+
+    /**
+     * HU-05: Finaliza el evento actualmente en curso, guarda fecha_fin y duracion_segundos en SQLite,
+     * actualiza el historial y muestra la confirmación de finalización (Pantalla 14 de Stitch).
+     */
+    private fun manejarClickFinalizarEvento() {
+        btnStopEvent.isEnabled = false
+        when (val res = dbHelper.finalizarEventoActivo(LocalDateTime.now())) {
+            is ResultadoEvento.Exito -> {
+                timerHandler.removeCallbacks(timerRunnable)
+                recargarDatosYActualizarUI()
+                DialogHelper.mostrarDialogoConfirmacionEventoFinalizado(
+                    context = this,
+                    eventoFinalizado = res.evento
+                )
+            }
+            is ResultadoEvento.Error -> {
+                DialogHelper.mostrarSnackbarError(rootMain, res.mensaje)
+                sincronizarEstadoEventoActivoYRecientes()
+            }
+        }
+    }
+
+    private fun abrirHistorialCompletoEventos() {
+        startActivity(Intent(this, EventHistoryActivity::class.java))
+    }
+
+    /**
+     * Sincroniza la pestaña Eventos con SQLite (Sección 7 y Sección 9):
+     * - Recupera si existe un evento en curso (`obtenerEventoActivo()`).
+     * - Si existe: muestra la tarjeta activa (Pantalla 13), deshabilita Iniciar,
+     *   habilita Finalizar y arranca el cronómetro en vivo calculado desde `fecha_inicio`.
+     *   El campo de búsqueda y el botón "X" permanecen siempre habilitados para que el usuario
+     *   pueda escribir, borrar caracteres o limpiar su búsqueda sin bloqueo.
+     * - Si no existe: muestra el estado inactivo (Pantalla 10), habilita Iniciar
+     *   y deshabilita Finalizar.
+     * - Actualiza la lista de últimos eventos registrados.
+     */
+    private fun sincronizarEstadoEventoActivoYRecientes() {
+        val eventoActivo = dbHelper.obtenerEventoActivo()
+        timerHandler.removeCallbacks(timerRunnable)
+
+        // El buscador y el botón de limpiar ("X") nunca se bloquean para permitir escribir y borrar libremente
+        etEventTaskSearch.isEnabled = true
+        btnClearEventSearch.isEnabled = true
+
+        if (eventoActivo != null) {
+            // Estado En Curso (Pantalla 13 de Stitch)
+            tvEventLiveStatusBadge.text = "● EN VIVO"
+            tvEventLiveStatusBadge.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(this, R.color.secondary_fixed)
+            )
+            tvEventLiveStatusBadge.setTextColor(
+                ContextCompat.getColor(this, R.color.on_secondary_fixed)
+            )
+
+            cardEventIdleState.visibility = View.GONE
+            cardEventActiveState.visibility = View.VISIBLE
+
+            val estilo = CategoryVisualStyle.obtenerEstilo(eventoActivo.categoriaNombre)
+            val accentColor = ContextCompat.getColor(this, estilo.accentColorRes)
+            val badgeBgColor = ContextCompat.getColor(this, estilo.badgeBgColorRes)
+            val badgeTextColor = ContextCompat.getColor(this, estilo.badgeTextColorRes)
+
+            viewActiveEventStripe.setBackgroundColor(accentColor)
+            llActiveEventCategoryBadge.backgroundTintList = ColorStateList.valueOf(badgeBgColor)
+            ivActiveEventCategoryIcon.setImageResource(estilo.iconRes)
+            ivActiveEventCategoryIcon.imageTintList = ColorStateList.valueOf(badgeTextColor)
+            tvActiveEventCategoryChip.text = eventoActivo.categoriaNombre
+            tvActiveEventCategoryChip.setTextColor(badgeTextColor)
+
+            tvActiveEventIdBadge.text = "ID #EVT-${eventoActivo.id.toString().padStart(3, '0')}"
+            tvActiveEventTaskTitle.text = eventoActivo.tareaNombre
+            tvActiveEventTaskSubtitle.text = eventoActivo.textoTareaConCategoria
+            tvActiveEventStartDate.text = eventoActivo.formatearFechaInicioCompleta()
+            tvActiveEventStartTime.text = eventoActivo.formatearHoraInicioConSegundos()
+
+            val segundosActuales = eventoActivo.obtenerSegundosTranscurridos(LocalDateTime.now())
+            tvActiveEventTimerDisplay.text = Evento.formatearCronometro(segundosActuales)
+
+            // Regla HU-05 y Sección 7: Mantener Iniciar deshabilitado y Finalizar habilitado
+            llEventsSearchLockedBanner.visibility = View.VISIBLE
+            btnStartEvent.isEnabled = false
+            btnStartEvent.alpha = 0.45f
+            btnQuickCreateFromSearch.isEnabled = false
+            btnQuickCreateFromSearch.alpha = 0.45f
+            btnStopEvent.isEnabled = true
+            btnStopEvent.alpha = 1.0f
+
+            timerHandler.postDelayed(timerRunnable, 1000L)
+        } else {
+            // Estado Inactivo (Pantalla 10 de Stitch)
+            tvEventLiveStatusBadge.text = "● Inactivo"
+            tvEventLiveStatusBadge.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(this, R.color.surface_container_high)
+            )
+            tvEventLiveStatusBadge.setTextColor(
+                ContextCompat.getColor(this, R.color.on_surface_variant)
+            )
+
+            cardEventIdleState.visibility = View.VISIBLE
+            cardEventActiveState.visibility = View.GONE
+
+            llEventsSearchLockedBanner.visibility = View.GONE
+            btnStartEvent.isEnabled = true
+            btnStartEvent.alpha = 1.0f
+            btnQuickCreateFromSearch.isEnabled = true
+            btnQuickCreateFromSearch.alpha = 1.0f
+            btnStopEvent.isEnabled = false
+        }
+
+        // Actualizar lista de últimos eventos registrados en Eventos
+        val eventosRecientes = dbHelper.listarEventos(categoriaIdFiltro = null, limite = 5)
+        if (eventosRecientes.isEmpty()) {
+            rvRecentEvents.visibility = View.GONE
+            cardEmptyRecentEvents.visibility = View.VISIBLE
+        } else {
+            rvRecentEvents.visibility = View.VISIBLE
+            cardEmptyRecentEvents.visibility = View.GONE
+            recentEventsAdapter.actualizarDatos(eventosRecientes)
+        }
+    }
+
     private fun navegarATareasPorNombreCategoria(nombreCategoria: String) {
         val cat = dbHelper.listarCategorias().firstOrNull {
             it.nombre.equals(nombreCategoria, ignoreCase = true)
@@ -283,7 +748,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private enum class SeccionActiva {
-        INICIO, CATEGORIAS, TAREAS
+        INICIO, CATEGORIAS, TAREAS, EVENTOS
     }
 
     private fun mostrarSeccion(seccion: SeccionActiva) {
@@ -293,6 +758,7 @@ class MainActivity : AppCompatActivity() {
                 viewHome.visibility = View.VISIBLE
                 viewCategories.visibility = View.GONE
                 viewTasks.visibility = View.GONE
+                viewEvents.visibility = View.GONE
                 fabMain.visibility = View.GONE
             }
             SeccionActiva.CATEGORIAS -> {
@@ -300,6 +766,7 @@ class MainActivity : AppCompatActivity() {
                 viewHome.visibility = View.GONE
                 viewCategories.visibility = View.VISIBLE
                 viewTasks.visibility = View.GONE
+                viewEvents.visibility = View.GONE
                 fabMain.visibility = View.VISIBLE
                 fabMain.contentDescription = "Crear nueva categoría"
             }
@@ -308,16 +775,25 @@ class MainActivity : AppCompatActivity() {
                 viewHome.visibility = View.GONE
                 viewCategories.visibility = View.GONE
                 viewTasks.visibility = View.VISIBLE
+                viewEvents.visibility = View.GONE
                 fabMain.visibility = View.VISIBLE
                 fabMain.contentDescription = "Agregar nueva tarea"
+            }
+            SeccionActiva.EVENTOS -> {
+                tvTopAppSubtitle.text = getString(R.string.nav_events)
+                viewHome.visibility = View.GONE
+                viewCategories.visibility = View.GONE
+                viewTasks.visibility = View.GONE
+                viewEvents.visibility = View.VISIBLE
+                fabMain.visibility = View.GONE
             }
         }
         recargarDatosYActualizarUI()
     }
 
     /**
-     * Muestra el nombre del estudiante y la versión en el formato obligatorio de la Sección 8:
-     * "Nombre Apellido · v0.1.0 (1)"
+     * Muestra el nombre del estudiante y la versión actual:
+     * "Nombre Apellido · v0.2.0 (2)"
      */
     private fun actualizarCabeceraEstudianteYVersion() {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -326,7 +802,7 @@ class MainActivity : AppCompatActivity() {
             ?: getString(R.string.student_name)
 
         val pkgInfo = packageManager.getPackageInfo(packageName, 0)
-        val versionName = pkgInfo.versionName ?: "0.1.0"
+        val versionName = pkgInfo.versionName ?: "0.2.0"
         val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             pkgInfo.longVersionCode
         } else {
@@ -334,7 +810,6 @@ class MainActivity : AppCompatActivity() {
             pkgInfo.versionCode.toLong()
         }
 
-        // Formato exacto: "Nombre Apellido · v0.1.0 (1)"
         tvStudentVersion.text = "$nombreGuardado · v$versionName ($versionCode)"
         tvHomeGreeting.text = if (nombreGuardado == getString(R.string.student_name)) {
             "¡Hola, Estudiante SENATI! 👋"
@@ -358,7 +833,7 @@ class MainActivity : AppCompatActivity() {
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Nombre del Estudiante")
-            .setMessage("Personaliza el nombre que se muestra junto a la versión v0.1.0 (1):")
+            .setMessage("Personaliza el nombre que se muestra junto a la versión de la aplicación:")
             .setView(input)
             .setNegativeButton("Cancelar", null)
             .setPositiveButton("Guardar") { _, _ ->
@@ -375,6 +850,7 @@ class MainActivity : AppCompatActivity() {
     private fun recargarDatosYActualizarUI() {
         val categorias = dbHelper.listarCategorias()
         val todasLasTareas = dbHelper.listarTareas(categoriaIdFiltro = null)
+        val todosLosEventos = dbHelper.listarEventos(categoriaIdFiltro = null)
 
         // Si el filtro actual apunta a una categoría que fue eliminada, reiniciar filtro
         if (filtroCategoriaIdTarea != null && categorias.none { it.id == filtroCategoriaIdTarea }) {
@@ -390,11 +866,13 @@ class MainActivity : AppCompatActivity() {
         // 1. Actualizar Pantalla 1: Inicio
         val totalCats = categorias.size
         val totalTasks = todasLasTareas.size
+        val totalEvents = todosLosEventos.size
 
         tvQuickCategoriesCount.text = if (totalCats == 1) "1 configurada" else "$totalCats configuradas"
         tvQuickTasksBadge.text = totalTasks.toString()
         tvQuickTasksCount.text = if (totalTasks == 1) "1 registrada" else "$totalTasks registradas"
-        tvHeroSummary.text = "Resumen actual: $totalCats categorías y $totalTasks tareas registradas"
+        tvHeroSummary.text =
+            "Resumen actual: $totalCats categorías, $totalTasks tareas y $totalEvents eventos"
 
         fun textoTareasChip(nombreCat: String): String {
             val count = categorias.firstOrNull {
@@ -451,6 +929,13 @@ class MainActivity : AppCompatActivity() {
             rvTasks.visibility = View.VISIBLE
             cardEmptyTasksState.visibility = View.GONE
             taskAdapter.actualizarDatos(tareasFiltradas)
+        }
+
+        // 4. Actualizar Pantallas 10, 11 y 13: Eventos y recuperación de evento activo
+        sincronizarEstadoEventoActivoYRecientes()
+        val textoBusquedaActual = etEventTaskSearch.text?.toString().orEmpty()
+        if (textoBusquedaActual.isNotEmpty()) {
+            actualizarResultadosBusquedaEventos(textoBusquedaActual)
         }
     }
 
@@ -515,7 +1000,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // =========================================================================
-    // NAVEGACIÓN A FORMULARIOS Y DIÁLOGOS DE CONFIRMACIÓN / BLOQUEO
+    // NAVEGACIÓN A FORMULARIOS Y DIÁLOGOS DE CONFIRMACIÓN / BLOQUEO (SPRINT 1)
     // =========================================================================
 
     private fun abrirFormularioCrearCategoria() {
@@ -533,7 +1018,6 @@ class MainActivity : AppCompatActivity() {
     private fun manejarIntentoEliminarCategoria(categoria: Categoria) {
         val tareasAsociadas = dbHelper.listarTareas(categoriaIdFiltro = categoria.id)
         if (tareasAsociadas.isNotEmpty()) {
-            // Regla HU-01.7: Impedir eliminar categoría con tareas asociadas y mostrar explicación (Pantalla 8 - Sección 2)
             DialogHelper.mostrarDialogoBloqueoCategoriaConTareas(
                 context = this,
                 nombreCategoria = categoria.nombre,
@@ -542,7 +1026,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Regla HU-01.6: Solicitar confirmación antes de eliminar categoría (Pantalla 8 - Sección 1)
         DialogHelper.mostrarDialogoConfirmarEliminarCategoria(this, categoria) {
             when (val res = dbHelper.eliminarCategoria(categoria.id)) {
                 is ResultadoEliminacionCategoria.Eliminada -> {
@@ -580,7 +1063,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun manejarIntentoEliminarTarea(tarea: Tarea) {
-        // Regla HU-02.7: Permitir eliminar tareas con confirmación (Pantalla 8 - Sección 3)
         DialogHelper.mostrarDialogoConfirmarEliminarTarea(this, tarea) {
             when (val res = dbHelper.eliminarTarea(tarea.id)) {
                 is ResultadoOperacion.Exito -> {

@@ -188,7 +188,7 @@
                                 android:paddingTop="4dp"
                                 android:paddingEnd="10dp"
                                 android:paddingBottom="4dp"
-                                android:text="● SPRINT 1 ACTIVO"
+                                android:text="● SPRINT 2 ACTIVO"
                                 android:textColor="@color/on_secondary"
                                 android:textSize="10sp"
                                 android:textStyle="bold" />
@@ -1277,6 +1277,956 @@
                             app:icon="@drawable/ic_add"
                             app:iconGravity="textStart"
                             app:iconTint="@color/on_secondary" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- ==================================================================== -->
+        <!-- PANTALLAS 10, 11 Y 13: EVENTOS, BÚSQUEDA EN TIEMPO REAL Y CRONÓMETRO  -->
+        <!-- ==================================================================== -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/viewEvents"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="96dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Encabezado Eventos (Stitch Pantalla 10) -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/events_header_title"
+                    android:textColor="@color/primary"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/events_header_subtitle"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="14sp" />
+
+                <!-- ================================================================ -->
+                <!-- SECCIÓN 1: BUSCADOR / SELECTOR DE TAREA CON INICIAR (HU-03/04/05) -->
+                <!-- ================================================================ -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardEventsSearchSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    app:cardBackgroundColor="@color/surface_container_lowest"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="1dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_timer"
+                                app:tint="@color/primary_container" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:text="Comenzar registro"
+                                android:textColor="@color/on_surface"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvEventsSearchModeBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_pill"
+                                android:backgroundTint="@color/surface_container_high"
+                                android:paddingStart="10dp"
+                                android:paddingTop="3dp"
+                                android:paddingEnd="10dp"
+                                android:paddingBottom="3dp"
+                                android:text="Tiempo real"
+                                android:textColor="@color/on_surface_variant"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Banner de bloqueo cuando ya hay un evento activo (Stitch Pantalla 13) -->
+                        <LinearLayout
+                            android:id="@+id/llEventsSearchLockedBanner"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_rounded_12"
+                            android:backgroundTint="@color/surface_container_low"
+                            android:gravity="top"
+                            android:orientation="horizontal"
+                            android:padding="10dp"
+                            android:visibility="gone">
+
+                            <FrameLayout
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:background="@drawable/bg_circle"
+                                android:backgroundTint="@color/surface_container_highest">
+
+                                <ImageView
+                                    android:layout_width="15dp"
+                                    android:layout_height="15dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_lock"
+                                    app:tint="@color/on_surface_variant" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Evento en curso activo"
+                                    android:textColor="@color/on_surface"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="Puedes buscar o consultar tareas aquí. Para iniciar un nuevo registro, primero finaliza el evento actual."
+                                    android:textColor="@color/on_surface_variant"
+                                    android:textSize="11sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Tarea asignada"
+                            android:textColor="@color/on_surface_variant"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <!-- Campo Buscador en Tiempo Real (HU-03) -->
+                        <LinearLayout
+                            android:id="@+id/llEventSearchInputBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@drawable/bg_input_normal"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="10dp">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_search"
+                                app:tint="@color/primary" />
+
+                            <EditText
+                                android:id="@+id/etEventTaskSearch"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:background="@null"
+                                android:focusable="true"
+                                android:focusableInTouchMode="true"
+                                android:hint="@string/events_search_hint"
+                                android:imeOptions="actionSearch"
+                                android:inputType="textCapSentences|textNoSuggestions"
+                                android:maxLines="1"
+                                android:singleLine="true"
+                                android:textColor="@color/on_surface"
+                                android:textColorHint="@color/outline"
+                                android:textSize="15sp" />
+
+                            <ImageButton
+                                android:id="@+id/btnClearEventSearch"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="Limpiar búsqueda"
+                                android:padding="6dp"
+                                android:src="@drawable/ic_close"
+                                android:visibility="gone"
+                                app:tint="@color/on_surface_variant" />
+                        </LinearLayout>
+
+                        <!-- Texto informativo / Contador de coincidencias (Stitch Pantallas 10 y 11) -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:id="@+id/ivEventSearchHelperIcon"
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_info"
+                                app:tint="@color/on_surface_variant" />
+
+                            <TextView
+                                android:id="@+id/tvEventSearchHelper"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:layout_weight="1"
+                                android:text="@string/events_search_helper_short"
+                                android:textColor="@color/on_surface_variant"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- Lista RecyclerView de Coincidencias de Búsqueda (Stitch Pantalla 11) -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvEventSearchMatches"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:focusable="false"
+                            android:focusableInTouchMode="false"
+                            android:nestedScrollingEnabled="false"
+                            android:visibility="gone" />
+
+                        <!-- Estado Vacío de Búsqueda: Sin resultados con >= 2 caracteres (Stitch Pantalla 11) -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cardEventSearchNoResults"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:visibility="gone"
+                            app:cardBackgroundColor="@color/surface_container_low"
+                            app:cardCornerRadius="14dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="@color/outline_variant"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_horizontal"
+                                android:orientation="vertical"
+                                android:padding="14dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_pill"
+                                    android:backgroundTint="@color/error_container"
+                                    android:paddingStart="10dp"
+                                    android:paddingTop="3dp"
+                                    android:paddingEnd="10dp"
+                                    android:paddingBottom="3dp"
+                                    android:text="Sin coincidencias registradas"
+                                    android:textColor="@color/on_error_container"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvEventSearchNoResultsTitle"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="6dp"
+                                    android:gravity="center"
+                                    android:text="No se encontraron tareas con “...”"
+                                    android:textColor="@color/on_surface"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="3dp"
+                                    android:gravity="center"
+                                    android:text="Pulsa “Iniciar” para crearla como nueva tarea, elegir su categoría e iniciar el evento de inmediato."
+                                    android:textColor="@color/on_surface_variant"
+                                    android:textSize="12sp" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnQuickCreateFromSearch"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="38dp"
+                                    android:layout_marginTop="8dp"
+                                    android:text="Crear y Registrar ahora"
+                                    android:textAllCaps="false"
+                                    android:textColor="@color/on_secondary"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    app:backgroundTint="@color/secondary"
+                                    app:cornerRadius="10dp"
+                                    app:icon="@drawable/ic_add"
+                                    app:iconGravity="textStart"
+                                    app:iconTint="@color/on_secondary" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Tarjeta de Vista Previa de Tarea Seleccionada (Stitch Pantalla 11) -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cardSelectedTaskPreview"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:visibility="gone"
+                            app:cardBackgroundColor="@color/surface_container_high"
+                            app:cardCornerRadius="14dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="@color/secondary"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <ImageView
+                                        android:layout_width="16dp"
+                                        android:layout_height="16dp"
+                                        android:contentDescription="@null"
+                                        android:src="@drawable/ic_check"
+                                        app:tint="@color/secondary" />
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="6dp"
+                                        android:layout_weight="1"
+                                        android:text="TAREA SELECCIONADA"
+                                        android:textColor="@color/secondary"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvSelectedTaskCategoryBadge"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:background="@drawable/bg_pill"
+                                        android:backgroundTint="@color/primary_fixed"
+                                        android:paddingStart="8dp"
+                                        android:paddingTop="2dp"
+                                        android:paddingEnd="8dp"
+                                        android:paddingBottom="2dp"
+                                        android:text="Categoría: Estudio"
+                                        android:textColor="@color/on_primary_fixed"
+                                        android:textSize="10sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <TextView
+                                    android:id="@+id/tvSelectedTaskPreviewTitle"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="6dp"
+                                    android:text="Leer Kotlin · Estudio"
+                                    android:textColor="@color/primary"
+                                    android:textSize="17sp"
+                                    android:textStyle="bold" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="Lista para iniciar cronómetro"
+                                        android:textColor="@color/on_surface_variant"
+                                        android:textSize="11sp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="monospace"
+                                        android:text="00:00:00"
+                                        android:textColor="@color/primary"
+                                        android:textSize="12sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Botón Principal: Iniciar (HU-05) -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnStartEvent"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:layout_marginTop="12dp"
+                            android:text="Iniciar registro"
+                            android:textAllCaps="false"
+                            android:textColor="@color/on_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            app:backgroundTint="@color/primary_container"
+                            app:cornerRadius="12dp"
+                            app:icon="@drawable/ic_play"
+                            app:iconGravity="textStart"
+                            app:iconTint="@color/on_primary" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ================================================================ -->
+                <!-- SECCIÓN 2: ESTADO ACTUAL / EVENTO EN CURSO (Pantallas 10 y 13)    -->
+                <!-- ================================================================ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="ESTADO ACTUAL"
+                        android:textColor="@color/on_surface_variant"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvEventLiveStatusBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_pill"
+                        android:backgroundTint="@color/surface_container_high"
+                        android:paddingStart="10dp"
+                        android:paddingTop="3dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="3dp"
+                        android:text="● Inactivo"
+                        android:textColor="@color/on_surface_variant"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Tarjeta cuando NO hay evento en curso (Stitch Pantalla 10) -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardEventIdleState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:cardBackgroundColor="@color/surface_container_lowest"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="1dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="top"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
+
+                        <FrameLayout
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_rounded_12"
+                            android:backgroundTint="@color/surface_container">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_timer_off"
+                                app:tint="@color/on_surface_variant" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/events_idle_title"
+                                android:textColor="@color/on_surface"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:lineSpacingExtra="2dp"
+                                android:text="@string/events_idle_desc"
+                                android:textColor="@color/on_surface_variant"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Hero Card cuando SÍ hay un evento en curso (Stitch Pantalla 13) -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardEventActiveState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/surface_container_lowest"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="3dp"
+                    app:strokeColor="@color/primary_fixed_dim"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <!-- Franja lateral de estado en curso -->
+                        <View
+                            android:id="@+id/viewActiveEventStripe"
+                            android:layout_width="6dp"
+                            android:layout_height="match_parent"
+                            android:background="@color/primary_container" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="18dp">
+
+                            <!-- Cabecera: Categoría e ID de Evento -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:id="@+id/llActiveEventCategoryBadge"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_pill"
+                                    android:backgroundTint="@color/primary_fixed"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal"
+                                    android:paddingStart="10dp"
+                                    android:paddingTop="4dp"
+                                    android:paddingEnd="10dp"
+                                    android:paddingBottom="4dp">
+
+                                    <ImageView
+                                        android:id="@+id/ivActiveEventCategoryIcon"
+                                        android:layout_width="14dp"
+                                        android:layout_height="14dp"
+                                        android:contentDescription="@null"
+                                        android:src="@drawable/ic_school"
+                                        app:tint="@color/on_primary_fixed" />
+
+                                    <TextView
+                                        android:id="@+id/tvActiveEventCategoryChip"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="5dp"
+                                        android:text="Estudio"
+                                        android:textColor="@color/on_primary_fixed"
+                                        android:textSize="12sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <Space
+                                    android:layout_width="0dp"
+                                    android:layout_height="1dp"
+                                    android:layout_weight="1" />
+
+                                <TextView
+                                    android:id="@+id/tvActiveEventIdBadge"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="monospace"
+                                    android:text="ID #EVT-001"
+                                    android:textColor="@color/on_surface_variant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Nombre de la tarea activa -->
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:text="TAREA ACTIVA"
+                                android:textColor="@color/on_surface_variant"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvActiveEventTaskTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Leer Kotlin"
+                                android:textColor="@color/primary"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvActiveEventTaskSubtitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Leer Kotlin · Estudio"
+                                android:textColor="@color/on_surface_variant"
+                                android:textSize="12sp" />
+
+                            <!-- Dial Circular & Cronómetro en Tiempo Real (Stitch Pantalla 13) -->
+                            <FrameLayout
+                                android:layout_width="176dp"
+                                android:layout_height="176dp"
+                                android:layout_gravity="center_horizontal"
+                                android:layout_marginTop="16dp"
+                                android:layout_marginBottom="16dp"
+                                android:background="@drawable/bg_timer_ring">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:gravity="center"
+                                    android:orientation="vertical">
+
+                                    <FrameLayout
+                                        android:layout_width="36dp"
+                                        android:layout_height="36dp"
+                                        android:background="@drawable/bg_circle"
+                                        android:backgroundTint="@color/primary_fixed">
+
+                                        <ImageView
+                                            android:layout_width="18dp"
+                                            android:layout_height="18dp"
+                                            android:layout_gravity="center"
+                                            android:contentDescription="@null"
+                                            android:src="@drawable/ic_hourglass"
+                                            app:tint="@color/primary_container" />
+                                    </FrameLayout>
+
+                                    <TextView
+                                        android:id="@+id/tvActiveEventTimerDisplay"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:fontFamily="monospace"
+                                        android:text="00:00:00"
+                                        android:textColor="@color/primary"
+                                        android:textSize="26sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Tiempo acumulado"
+                                        android:textColor="@color/on_surface_variant"
+                                        android:textSize="11sp" />
+                                </LinearLayout>
+                            </FrameLayout>
+
+                            <!-- Metadatos de captura automática del sistema (Fecha y Hora de inicio) -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_rounded_12"
+                                android:backgroundTint="@color/surface_container_low"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <ImageView
+                                        android:layout_width="15dp"
+                                        android:layout_height="15dp"
+                                        android:contentDescription="@null"
+                                        android:src="@drawable/ic_calendar"
+                                        app:tint="@color/on_surface_variant" />
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="6dp"
+                                        android:layout_weight="1"
+                                        android:text="Fecha de inicio:"
+                                        android:textColor="@color/on_surface_variant"
+                                        android:textSize="12sp" />
+
+                                    <TextView
+                                        android:id="@+id/tvActiveEventStartDate"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Hoy, 12 Octubre 2026"
+                                        android:textColor="@color/primary"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="6dp"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <ImageView
+                                        android:layout_width="15dp"
+                                        android:layout_height="15dp"
+                                        android:contentDescription="@null"
+                                        android:src="@drawable/ic_timer"
+                                        app:tint="@color/on_surface_variant" />
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="6dp"
+                                        android:layout_weight="1"
+                                        android:text="Hora de inicio:"
+                                        android:textColor="@color/on_surface_variant"
+                                        android:textSize="12sp" />
+
+                                    <TextView
+                                        android:id="@+id/tvActiveEventStartTime"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="monospace"
+                                        android:text="18:30:15"
+                                        android:textColor="@color/primary"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="6dp"
+                                        android:background="@drawable/bg_pill"
+                                        android:backgroundTint="@color/secondary_fixed"
+                                        android:paddingStart="6dp"
+                                        android:paddingTop="1dp"
+                                        android:paddingEnd="6dp"
+                                        android:paddingBottom="1dp"
+                                        android:text="automática"
+                                        android:textColor="@color/on_secondary_fixed"
+                                        android:textSize="10sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Botón Principal: Finalizar actividad (HU-05) -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnStopEvent"
+                                android:layout_width="match_parent"
+                                android:layout_height="50dp"
+                                android:layout_marginTop="14dp"
+                                android:text="Finalizar actividad"
+                                android:textAllCaps="false"
+                                android:textColor="@color/on_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="@color/primary_container"
+                                app:cornerRadius="12dp"
+                                app:icon="@drawable/ic_stop"
+                                app:iconGravity="textStart"
+                                app:iconTint="@color/on_primary" />
+
+                            <!-- Mensaje informativo de Persistencia Garantizada (Stitch Pantalla 13) -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:background="@drawable/bg_rounded_12"
+                                android:backgroundTint="#3389F5E7"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:padding="10dp">
+
+                                <FrameLayout
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:background="@drawable/bg_circle"
+                                    android:backgroundTint="@color/secondary_container">
+
+                                    <ImageView
+                                        android:layout_width="15dp"
+                                        android:layout_height="15dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="@null"
+                                        android:src="@drawable/ic_check"
+                                        app:tint="@color/on_secondary_container" />
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="10dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Persistencia garantizada"
+                                        android:textColor="@color/on_secondary_container"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="Si sales o cierras la app, el tiempo continúa registrándose con la marca temporal original."
+                                        android:textColor="@color/on_surface_variant"
+                                        android:textSize="11sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ================================================================ -->
+                <!-- SECCIÓN 3: HISTORIAL DE EVENTOS RECIENTES (Pantallas 10 y 15)     -->
+                <!-- ================================================================ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/events_recent_title"
+                        android:textColor="@color/on_surface"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnViewFullEventHistory"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="4dp"
+                        android:text="Ver todo el historial ›"
+                        android:textColor="@color/primary_container"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvRecentEvents"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false" />
+
+                <!-- Estado Vacío de Eventos Recientes (Stitch Pantalla 10) -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardEmptyRecentEvents"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/surface_container_lowest"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="1dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:padding="22dp">
+
+                        <FrameLayout
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
+                            android:background="@drawable/bg_circle"
+                            android:backgroundTint="@color/surface_container">
+
+                            <ImageView
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_timer_off"
+                                app:tint="@color/on_surface_variant" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:gravity="center"
+                            android:text="@string/empty_events_title"
+                            android:textColor="@color/on_surface"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center"
+                            android:text="@string/empty_events_desc"
+                            android:textColor="@color/on_surface_variant"
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
