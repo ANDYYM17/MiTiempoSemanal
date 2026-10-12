@@ -1,0 +1,601 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootCategoryForm"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface">
+
+    <!-- ==================== TOP APP BAR ==================== -->
+    <LinearLayout
+        android:id="@+id/topBarCategoryForm"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@color/surface_container_lowest"
+        android:elevation="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="16dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnBackCategoryForm"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Volver"
+            android:padding="12dp"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="@color/on_surface" />
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="4dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_logo_app" />
+
+        <TextView
+            android:id="@+id/tvCategoryFormToolbarTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/title_create_category"
+            android:textColor="@color/on_surface"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_circle"
+            android:backgroundTint="@color/primary">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_person" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- ==================== CONTENIDO SCROLLABLE ==================== -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="32dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/topBarCategoryForm">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- ==================== SECCIÓN EXCLUSIVA MODO EDICIÓN (Pantalla 4) ==================== -->
+            <LinearLayout
+                android:id="@+id/llEditCategoryContextHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_edit"
+                        app:tint="@color/secondary" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:text="Detalle de registro"
+                        android:textColor="@color/primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvEditCategoryIdChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_pill"
+                        android:backgroundTint="@color/secondary_container"
+                        android:paddingStart="12dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="4dp"
+                        android:text="● ID: CAT-001 · Activa"
+                        android:textColor="@color/on_secondary_container"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Category Preview Banner Card (Stitch Pantalla 4) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_rounded_16"
+                    android:backgroundTint="@color/surface_container_low"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <FrameLayout
+                        android:id="@+id/flEditCategoryBadgeIcon"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_rounded_12"
+                        android:backgroundTint="@color/primary">
+
+                        <ImageView
+                            android:id="@+id/ivEditCategoryPreviewIcon"
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_school"
+                            app:tint="@color/on_primary" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="CATEGORÍA EN EDICIÓN"
+                            android:textColor="@color/outline"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvEditCategoryPreviewName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="Estudio"
+                            android:textColor="@color/on_surface"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvEditCategoryTaskCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 tareas"
+                            android:textColor="@color/secondary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="vinculadas"
+                            android:textColor="@color/on_surface_variant"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ==================== TARJETA DE FORMULARIO PRINCIPAL (Pantalla 3 y 4) ==================== -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/surface_container_lowest"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1dp"
+                app:strokeColor="@color/outline_variant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_label"
+                            app:tint="@color/secondary" />
+
+                        <TextView
+                            android:id="@+id/tvCategoryCardTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="@string/category_form_section_title"
+                            android:textColor="@color/on_surface"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvCategoryCardDesc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/category_form_section_desc"
+                        android:textColor="@color/on_surface_variant"
+                        android:textSize="13sp" />
+
+                    <!-- Label + Character Counter -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/category_name_label"
+                            android:textColor="@color/primary"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvCategoryCharCounter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0/30"
+                            android:textColor="@color/outline"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <!-- Input Box Wrapper (Stitch M3 Outlined Input) -->
+                    <LinearLayout
+                        android:id="@+id/llCategoryInputContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_input_normal"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="8dp">
+
+                        <ImageView
+                            android:id="@+id/ivCategoryInputLeadingIcon"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_label"
+                            app:tint="@color/outline" />
+
+                        <EditText
+                            android:id="@+id/etCategoryName"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:background="@null"
+                            android:hint="@string/category_name_hint"
+                            android:importantForAutofill="no"
+                            android:inputType="textCapSentences"
+                            android:maxLength="30"
+                            android:maxLines="1"
+                            android:textColor="@color/on_surface"
+                            android:textColorHint="@color/outline"
+                            android:textSize="15sp" />
+
+                        <ImageButton
+                            android:id="@+id/btnClearCategoryName"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Borrar texto"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_close"
+                            android:visibility="gone"
+                            app:tint="@color/outline" />
+                    </LinearLayout>
+
+                    <!-- Live Helper / Error Feedback Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp">
+
+                        <ImageView
+                            android:id="@+id/ivCategoryFeedbackIcon"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_info"
+                            app:tint="@color/outline" />
+
+                        <TextView
+                            android:id="@+id/tvCategoryFeedbackMessage"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="@string/category_helper_default"
+                            android:textColor="@color/on_surface_variant"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- Pruebas Rápidas de Validación (Stitch Pantalla 3 y 4) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Pruebas rápidas de validación (Sprint 1):"
+                            android:textColor="@color/outline"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnTestCategoryEmpty"
+                                style="@style/Widget.Material3.Button.TonalButton"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_marginEnd="6dp"
+                                android:layout_weight="1"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:text="Probar Vacío"
+                                android:textColor="@color/on_surface"
+                                android:textSize="11sp"
+                                app:backgroundTint="@color/surface_container_high"
+                                app:cornerRadius="10dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnTestCategoryDuplicate"
+                                style="@style/Widget.Material3.Button.TonalButton"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_marginStart="6dp"
+                                android:layout_weight="1"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:text="Probar Duplicado"
+                                android:textColor="@color/on_surface"
+                                android:textSize="11sp"
+                                app:backgroundTint="@color/surface_container_high"
+                                app:cornerRadius="10dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Botones Principales de Acción -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSaveCategory"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="18dp"
+                        android:text="@string/btn_save_category"
+                        android:textColor="@color/on_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@color/primary"
+                        app:cornerRadius="12dp"
+                        app:icon="@drawable/ic_check"
+                        app:iconGravity="textStart"
+                        app:iconTint="@color/on_primary" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCancelCategory"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/btn_cancel"
+                        android:textColor="@color/primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@color/surface_container_high"
+                        app:cornerRadius="12dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ==================== SECCIÓN IMPACTO Y TAREAS VINCULADAS (Pantalla 4 Edición) ==================== -->
+            <LinearLayout
+                android:id="@+id/llEditCategoryImpactSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Tarjeta Impacto en Tareas Sincronizadas -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_rounded_16"
+                    android:backgroundTint="#4DD6E3FF"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <FrameLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_circle"
+                        android:backgroundTint="@color/primary_fixed">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_info"
+                            app:tint="@color/primary" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Impacto en tareas sincronizadas"
+                            android:textColor="@color/primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvEditCategoryImpactDesc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:lineSpacingExtra="2dp"
+                            android:text="Al cambiar el nombre de la categoría, las tareas vinculadas mostrarán automáticamente el nuevo nombre."
+                            android:textColor="@color/on_surface_variant"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Tareas Activas Dependientes -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Tareas activas dependientes"
+                        android:textColor="@color/on_surface"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvDependentTasksCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 registros"
+                        android:textColor="@color/secondary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvDependentTasksList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_rounded_16"
+                    android:lineSpacingExtra="4dp"
+                    android:padding="14dp"
+                    android:text="Sin tareas vinculadas actualmente."
+                    android:textColor="@color/on_surface"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- ==================== TARJETA DE REGLAS DE CATEGORÍA (Stitch Pantalla 3) ==================== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_rounded_16"
+                android:backgroundTint="#4D86F2E4"
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <FrameLayout
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/bg_circle"
+                    android:backgroundTint="@color/secondary_container">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_info"
+                        app:tint="@color/on_secondary_container" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Reglas de categoría (HU-01)"
+                        android:textColor="@color/on_surface"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="No se permiten nombres vacíos, repetidos ni espacios en blanco innecesarios al inicio o final."
+                        android:textColor="@color/on_surface_variant"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>
+

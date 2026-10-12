@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog_28"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Shield Icon with Task Count Badge (Stitch Pantalla 8 - Dialog 2) -->
+    <FrameLayout
+        android:layout_width="56dp"
+        android:layout_height="56dp">
+
+        <FrameLayout
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_circle"
+            android:backgroundTint="@color/primary_container">
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_shield"
+                app:tint="@color/on_primary_container" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/tvBlockedBadgeCount"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="bottom|end"
+            android:background="@drawable/bg_circle"
+            android:backgroundTint="@color/secondary"
+            android:gravity="center"
+            android:text="2"
+            android:textColor="@color/on_secondary"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tvBlockedDialogTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:text="@string/dialog_blocked_category_title"
+        android:textColor="@color/on_surface"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <!-- Descriptive Box with Associated Tasks -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:background="@drawable/bg_rounded_12"
+        android:backgroundTint="@color/surface_container_low"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvBlockedCategoryHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="La categoría tiene tareas asociadas:"
+            android:textColor="@color/on_surface"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvBlockedTasksList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:lineSpacingExtra="4dp"
+            android:text="• &quot;Leer Kotlin&quot;"
+            android:textColor="@color/primary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Debes reasignar o eliminar estas tareas antes de borrar la categoría."
+            android:textColor="@color/on_surface_variant"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnBlockedUnderstood"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="18dp"
+        android:text="@string/btn_understood"
+        android:textColor="@color/on_primary"
+        android:textStyle="bold"
+        app:backgroundTint="@color/primary"
+        app:cornerRadius="24dp" />
+</LinearLayout>
+

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardCategory"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    app:cardBackgroundColor="@color/surface_container_lowest"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="1dp"
+    app:strokeColor="@color/outline_variant"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Left Category Color Stripe (4dp) -->
+        <View
+            android:id="@+id/viewCategoryStripe"
+            android:layout_width="5dp"
+            android:layout_height="match_parent"
+            android:background="@color/primary_container" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="14dp">
+
+            <!-- Circular Category Icon (48dp) -->
+            <FrameLayout
+                android:id="@+id/flCategoryIconBg"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_circle">
+
+                <ImageView
+                    android:id="@+id/ivCategoryIcon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_school" />
+            </FrameLayout>
+
+            <!-- Category Name & Task Count -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvCategoryName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Estudio"
+                    android:textColor="@color/on_surface"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:id="@+id/viewCategoryDot"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:background="@drawable/bg_circle" />
+
+                    <TextView
+                        android:id="@+id/tvCategoryTaskCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="0 tareas asignadas"
+                        android:textColor="@color/on_surface_variant"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Action Buttons: Edit & Delete (min 48dp touch targets) -->
+            <ImageButton
+                android:id="@+id/btnEditCategory"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Editar categoría"
+                android:padding="12dp"
+                android:src="@drawable/ic_edit"
+                app:tint="@color/on_surface_variant" />
+
+            <ImageButton
+                android:id="@+id/btnDeleteCategory"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Eliminar categoría"
+                android:padding="12dp"
+                android:src="@drawable/ic_delete"
+                app:tint="@color/error" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
+

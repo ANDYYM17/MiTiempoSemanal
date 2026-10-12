@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog_28"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Amber Warning Icon Circle (Stitch Pantalla 8 - Dialog 1) -->
+    <FrameLayout
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_circle"
+        android:backgroundTint="@color/amber_50">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_warning"
+            app:tint="@color/amber_700" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tvDialogDeleteCatTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:gravity="center"
+        android:text="@string/dialog_delete_category_title"
+        android:textColor="@color/on_surface"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvDialogDeleteCatMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="3dp"
+        android:text="¿Estás seguro de que deseas eliminar esta categoría? Esta acción no se puede deshacer."
+        android:textColor="@color/on_surface_variant"
+        android:textSize="14sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="end|center_vertical"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogCancelCat"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="@string/btn_cancel"
+            android:textColor="@color/primary"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogConfirmDeleteCat"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:text="@string/btn_delete"
+            android:textColor="@color/on_error"
+            android:textStyle="bold"
+            app:backgroundTint="@color/error"
+            app:cornerRadius="24dp"
+            app:icon="@drawable/ic_delete"
+            app:iconTint="@color/on_error" />
+    </LinearLayout>
+</LinearLayout>
+

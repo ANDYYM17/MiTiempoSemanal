@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootSystemMessages"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface">
+
+    <!-- ==================== TOP APP BAR (Stitch Pantalla 8) ==================== -->
+    <LinearLayout
+        android:id="@+id/topBarMessages"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@color/surface_container_lowest"
+        android:elevation="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="16dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnBackMessages"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Volver"
+            android:padding="12dp"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="@color/on_surface" />
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="4dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_logo_app" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Confirmaciones y Mensajes"
+            android:textColor="@color/on_surface"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- ==================== CATÁLOGO INTERACTIVO PANTALLA 8 ==================== -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="32dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/topBarMessages">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CATÁLOGO UI / SPECS M3"
+                android:textColor="@color/secondary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Mensajes y Diálogos del Sistema"
+                android:textColor="@color/on_surface"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Especificación de MaterialAlertDialog y Snackbars (Sprint 1 - API 24-36)"
+                android:textColor="@color/on_surface_variant"
+                android:textSize="13sp" />
+
+            <!-- SECCIÓN 1: DIÁLOGO 1 - CONFIRMACIÓN ELIMINAR CATEGORÍA -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="1. MaterialAlertDialog: Eliminar Categoría"
+                android:textColor="@color/on_surface"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@color/surface_container_lowest"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="3dp"
+                app:strokeColor="@color/outline_variant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <FrameLayout
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_circle"
+                        android:backgroundTint="@color/amber_50">
+
+                        <ImageView
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_warning"
+                            app:tint="@color/amber_700" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="¿Eliminar categoría?"
+                        android:textColor="@color/on_surface"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="¿Estás seguro de que deseas eliminar &quot;Ocio&quot;? Esta acción no se puede deshacer."
+                        android:textColor="@color/on_surface_variant"
+                        android:textSize="13sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDemoDialogDeleteCat"
+                        android:layout_width="wrap_content"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="14dp"
+                        android:text="Probar Diálogo en Vivo"
+                        android:textColor="@color/on_error"
+                        app:backgroundTint="@color/error"
+                        app:cornerRadius="22dp"
+                        app:icon="@drawable/ic_delete"
+                        app:iconTint="@color/on_error" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- SECCIÓN 2: DIÁLOGO 2 - REGLA DE BLOQUEO -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="2. Regla de Bloqueo: Categoría con Tareas (Sprint 1)"
+                android:textColor="@color/on_surface"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@color/surface_container_lowest"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="3dp"
+                app:strokeColor="@color/outline_variant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <FrameLayout
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_circle"
+                        android:backgroundTint="@color/primary_container">
+
+                        <ImageView
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_shield"
+                            app:tint="@color/on_primary_container" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center"
+                        android:text="No se puede eliminar la categoría"
+                        android:textColor="@color/on_surface"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_rounded_12"
+                        android:backgroundTint="@color/surface_container_low"
+                        android:lineSpacingExtra="3dp"
+                        android:padding="12dp"
+                        android:text="La categoría &quot;Estudio&quot; tiene tareas asociadas:\n• &quot;Leer Kotlin&quot;\nDebes reasignar o eliminar estas tareas antes de borrar la categoría."
+                        android:textColor="@color/on_surface"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDemoDialogBlockedCat"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="14dp"
+                        android:text="Probar Bloqueo en Vivo"
+                        android:textColor="@color/on_primary"
+                        app:backgroundTint="@color/primary"
+                        app:cornerRadius="22dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- SECCIÓN 3: DIÁLOGO 3 - ELIMINAR TAREA -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="3. Confirmación de Eliminación de Tarea"
+                android:textColor="@color/on_surface"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@color/surface_container_lowest"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="3dp"
+                app:strokeColor="@color/outline_variant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="¿Eliminar tarea?"
+                        android:textColor="@color/on_surface"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="¿Deseas eliminar la tarea &quot;Leer Kotlin&quot;? Se quitará de tu agenda semanal."
+                        android:textColor="@color/on_surface_variant"
+                        android:textSize="13sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDemoDialogDeleteTask"
+                        android:layout_width="wrap_content"
+                        android:layout_height="44dp"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="12dp"
+                        android:text="Probar Confirmación de Tarea"
+                        android:textColor="@color/on_error"
+                        app:backgroundTint="@color/error"
+                        app:cornerRadius="22dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- SECCIÓN 4: SNACKBARS DE NOTIFICACIÓN ACTIVA -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="4. Snackbars de Notificación Activa (M3)"
+                android:textColor="@color/on_surface"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDemoSnackbarSuccess"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="Snackbar Éxito"
+                    android:textColor="@color/tertiary_fixed"
+                    android:textSize="12sp"
+                    app:backgroundTint="@color/tertiary_container"
+                    app:cornerRadius="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDemoSnackbarError"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:text="Snackbar Error"
+                    android:textColor="@color/inverse_on_surface"
+                    android:textSize="12sp"
+                    app:backgroundTint="@color/inverse_surface"
+                    app:cornerRadius="12dp" />
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>
+

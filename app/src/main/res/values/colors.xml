@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- SENATI Academic Cadence - Material 3 Palette (Stitch) -->
+    <color name="primary">#002045</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="primary_container">#1A365D</color>
+    <color name="on_primary_container">#86A0CD</color>
+    <color name="primary_fixed">#D6E3FF</color>
+    <color name="primary_fixed_dim">#ADC7F7</color>
+    <color name="on_primary_fixed">#001B3C</color>
+    <color name="on_primary_fixed_variant">#2D476F</color>
+
+    <color name="secondary">#006A61</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="secondary_container">#86F2E4</color>
+    <color name="on_secondary_container">#006F66</color>
+    <color name="secondary_fixed">#89F5E7</color>
+    <color name="secondary_fixed_dim">#6BD8CB</color>
+    <color name="on_secondary_fixed">#00201D</color>
+    <color name="on_secondary_fixed_variant">#005049</color>
+
+    <color name="tertiary">#002618</color>
+    <color name="on_tertiary">#FFFFFF</color>
+    <color name="tertiary_container">#003E29</color>
+    <color name="on_tertiary_container">#00B47F</color>
+    <color name="tertiary_fixed">#68FCBF</color>
+    <color name="tertiary_fixed_dim">#45DFA4</color>
+    <color name="on_tertiary_fixed">#002114</color>
+    <color name="on_tertiary_fixed_variant">#005137</color>
+
+    <color name="error">#BA1A1A</color>
+    <color name="on_error">#FFFFFF</color>
+    <color name="error_container">#FFDAD6</color>
+    <color name="on_error_container">#93000A</color>
+
+    <color name="surface">#F7F9FB</color>
+    <color name="surface_dim">#D8DADC</color>
+    <color name="surface_bright">#F7F9FB</color>
+    <color name="surface_container_lowest">#FFFFFF</color>
+    <color name="surface_container_low">#F2F4F6</color>
+    <color name="surface_container">#ECEEF0</color>
+    <color name="surface_container_high">#E6E8EA</color>
+    <color name="surface_container_highest">#E0E3E5</color>
+    <color name="surface_variant">#E0E3E5</color>
+    <color name="on_surface">#191C1E</color>
+    <color name="on_surface_variant">#43474E</color>
+    <color name="outline">#74777F</color>
+    <color name="outline_variant">#C4C6CF</color>
+    <color name="inverse_surface">#2D3133</color>
+    <color name="inverse_on_surface">#EFF1F3</color>
+    <color name="surface_tint">#455F88</color>
+
+    <!-- Taxonomía de Categorías Académicas (Stitch) -->
+    <color name="cat_estudio_accent">#2563EB</color>
+    <color name="cat_estudio_bg">#EFF6FF</color>
+    <color name="cat_estudio_text">#1D4ED8</color>
+
+    <color name="cat_trabajo_accent">#D97706</color>
+    <color name="cat_trabajo_bg">#FFFBEB</color>
+    <color name="cat_trabajo_text">#B45309</color>
+
+    <color name="cat_descanso_accent">#059669</color>
+    <color name="cat_descanso_bg">#ECFDF5</color>
+    <color name="cat_descanso_text">#047857</color>
+
+    <color name="cat_ocio_accent">#9333EA</color>
+    <color name="cat_ocio_bg">#FAF5FF</color>
+    <color name="cat_ocio_text">#7E22CE</color>
+
+    <color name="amber_50">#FFFBEB</color>
+    <color name="amber_700">#B45309</color>
+</resources>

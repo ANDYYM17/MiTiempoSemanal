@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog_28"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Top Header with Red Circle Icon & Title (Stitch Pantalla 8 - Dialog 3) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:background="@drawable/bg_circle"
+            android:backgroundTint="@color/error_container">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_delete"
+                app:tint="@color/on_error_container" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/tvDialogDeleteTaskTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:text="@string/dialog_delete_task_title"
+            android:textColor="@color/on_surface"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvDialogDeleteTaskMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:lineSpacingExtra="3dp"
+        android:text="¿Deseas eliminar la tarea? Se quitará de tu agenda semanal."
+        android:textColor="@color/on_surface_variant"
+        android:textSize="14sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="22dp"
+        android:gravity="end|center_vertical"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogCancelTask"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="@string/btn_cancel"
+            android:textColor="@color/primary"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogConfirmDeleteTask"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:text="@string/btn_delete"
+            android:textColor="@color/on_error"
+            android:textStyle="bold"
+            app:backgroundTint="@color/error"
+            app:cornerRadius="24dp" />
+    </LinearLayout>
+</LinearLayout>
+
