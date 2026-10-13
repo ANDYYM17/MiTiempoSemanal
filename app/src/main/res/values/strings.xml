@@ -5,7 +5,7 @@
     <string name="student_name">Nombre Apellido</string>
     <string name="student_greeting">¡Hola, Estudiante SENATI!</string>
     <string name="version_display_format">%1$s · v%2$s (%3$d)</string>
-    <string name="version_code_name">v0.2.0 (2)</string>
+    <string name="version_code_name">v0.3.0 (3)</string>
 
     <!-- Navegación Inferior -->
     <string name="nav_home">Inicio</string>
@@ -14,15 +14,15 @@
     <string name="nav_events">Eventos</string>
 
     <!-- Pantalla 1: Inicio -->
-    <string name="sprint_active_badge">SPRINT 2 ACTIVO</string>
-    <string name="sprint_week_label">Semana 02/16</string>
+    <string name="sprint_active_badge">SPRINT 3 ACTIVO</string>
+    <string name="sprint_week_label">Semana 03/16</string>
     <string name="hero_title">Planificación y Control Semanal</string>
     <string name="hero_subtitle">Organiza tu semana académica y personal registrando tus categorías, tareas y eventos en tiempo real.</string>
     <string name="hero_goal">Meta sugerida: 5 bloques de estudio para hoy</string>
     <string name="quick_access_title">ACCESOS RÁPIDOS</string>
     <string name="quick_access_subtitle">Gestión directa</string>
     <string name="initial_categories_title">CATEGORÍAS INICIALES</string>
-    <string name="initial_categories_badge">SENATI v0.2</string>
+    <string name="initial_categories_badge">SENATI v0.3</string>
     <string name="upcoming_tasks_title">PRÓXIMAS TAREAS</string>
     <string name="view_all_tasks">Ver todas</string>
     <string name="btn_new_task">Nueva Tarea</string>
@@ -88,4 +88,10 @@
     <string name="events_history_subtitle">Registro cronológico de tiempo dedicado a tareas de SENATI</string>
     <string name="empty_events_title">Todavía no tienes eventos registrados</string>
     <string name="empty_events_desc">Los bloques de tiempo que midas con el cronómetro se guardarán aquí automáticamente.</string>
+
+    <!-- Pantallas 16 y 17: Panel Semanal por Categoría (Sprint 3) -->
+    <string name="weekly_panel_title">Mi tiempo esta semana</string>
+    <string name="weekly_panel_168h_label">Distribución de tus 168 horas</string>
+    <string name="weekly_panel_unregistered_label">Sin registrar</string>
+    <string name="weekly_panel_formula_note">Fórmula de cálculo: (minutos_categoría / 10 080 min) × 100 sobre las 168 h semanales</string>
 </resources>

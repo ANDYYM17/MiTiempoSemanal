@@ -6,7 +6,9 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.senati.mitiemposemanal.ayovera.model.Categoria
 import com.senati.mitiemposemanal.ayovera.model.Evento
+import com.senati.mitiemposemanal.ayovera.model.ResumenSemanal
 import com.senati.mitiemposemanal.ayovera.model.Tarea
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 sealed class ResultadoOperacion {
@@ -30,20 +32,21 @@ sealed class ResultadoEvento {
 }
 
 /**
- * Gestor de base de datos SQLite mediante SQLiteOpenHelper para MiTiempoSemanal (Sprints 1 y 2).
+ * Gestor de base de datos SQLite mediante SQLiteOpenHelper para MiTiempoSemanal (Sprints 1, 2 y 3).
  *
  * Tablas:
  * - `categorias` (id PK, nombre NOT NULL UNIQUE COLLATE NOCASE)
  * - `tareas` (id PK, nombre NOT NULL UNIQUE COLLATE NOCASE, categoria_id FK -> categorias.id ON DELETE RESTRICT)
  * - `eventos` (id PK, tarea_id FK -> tareas.id ON DELETE RESTRICT, fecha_inicio NOT NULL, fecha_fin NULL,
- *              duracion_segundos NULL, estado NOT NULL) + índice único parcial para garantizar un único evento activo.
+ *              duracion_segundos NULL, estado NOT NULL) + índice único parcial para garantizar un único evento activo
+ *              + índice por fecha_inicio y estado para consultas semanales agrupadas (Sprint 3).
  */
 class AdminSQLiteOpenHelper(context: Context) :
     SQLiteOpenHelper(context.applicationContext, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         const val DATABASE_NAME = "mi_tiempo_semanal.db"
-        const val DATABASE_VERSION = 2
+        const val DATABASE_VERSION = 3
 
         const val TABLE_CATEGORIAS = "categorias"
         const val COL_CAT_ID = "id"
@@ -62,6 +65,7 @@ class AdminSQLiteOpenHelper(context: Context) :
         const val COL_EVENT_DURACION_SEGUNDOS = "duracion_segundos"
         const val COL_EVENT_ESTADO = "estado"
         const val INDEX_UNICO_EVENTO_ACTIVO = "idx_unico_evento_activo"
+        const val INDEX_EVENTOS_SEMANA = "idx_eventos_semana"
     }
 
     override fun onConfigure(db: SQLiteDatabase) {
@@ -92,16 +96,24 @@ class AdminSQLiteOpenHelper(context: Context) :
         )
 
         crearTablaEventosEIndices(db)
+        crearIndiceConsultasSemanales(db)
         insertarCategoriasIniciales(db)
     }
 
     /**
-     * Migración incremental del Sprint 1 (v1) al Sprint 2 (v2):
-     * Crea la tabla `eventos` y su índice único de evento activo sin eliminar `categorias` ni `tareas`.
+     * Migración incremental preservando todos los datos de los Sprints 1 y 2:
+     * - v1 -> v2: Crea la tabla `eventos` y su índice único de evento activo sin eliminar `categorias` ni `tareas`.
+     * - v2 -> v3: Crea el índice `idx_eventos_semana` para optimizar el cómputo semanal con SUM y GROUP BY,
+     *             conservando todas las categorías, tareas, eventos finalizados y eventos en curso.
      */
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
             crearTablaEventosEIndices(db)
+            insertarCategoriasIniciales(db)
+        }
+        if (oldVersion < 3) {
+            crearTablaEventosEIndices(db)
+            crearIndiceConsultasSemanales(db)
             insertarCategoriasIniciales(db)
         }
     }
@@ -128,6 +140,15 @@ class AdminSQLiteOpenHelper(context: Context) :
             CREATE UNIQUE INDEX IF NOT EXISTS $INDEX_UNICO_EVENTO_ACTIVO
             ON $TABLE_EVENTOS($COL_EVENT_ESTADO)
             WHERE $COL_EVENT_ESTADO = '${Evento.ESTADO_EN_CURSO}'
+            """.trimIndent()
+        )
+    }
+
+    private fun crearIndiceConsultasSemanales(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE INDEX IF NOT EXISTS $INDEX_EVENTOS_SEMANA
+            ON $TABLE_EVENTOS($COL_EVENT_FECHA_INICIO, $COL_EVENT_ESTADO)
             """.trimIndent()
         )
     }
@@ -845,6 +866,85 @@ class AdminSQLiteOpenHelper(context: Context) :
         return ResultadoEvento.Exito(
             evento = eventoFinalizado,
             mensaje = "Evento finalizado: “${eventoFinalizado.tareaNombre}” (${eventoFinalizado.formatearDuracion(finAjustado)})."
+        )
+    }
+
+    // =========================================================================
+    // SPRINT 3: CONSULTA SQL OBLIGATORIA (SUM + GROUP BY) Y RESUMEN SEMANAL
+    // =========================================================================
+
+    /**
+     * Sección 7: Consulta SQL obligatoria con `SUM` y `GROUP BY` para obtener los segundos
+     * acumulados por categoría dentro de la semana indicada `[lunesInicio, lunesSiguienteExclusivo)`.
+     *
+     * Reglas cumplidas:
+     * 1. Relaciona `eventos` con `tareas` (`JOIN tareas t ON t.id = e.tarea_id`).
+     * 2. Relaciona `tareas` con `categorias` (`JOIN categorias c ON c.id = t.categoria_id`).
+     * 3. Selecciona únicamente eventos finalizados (`e.fecha_fin IS NOT NULL AND e.estado = 'FINALIZADO'`).
+     * 4. Filtra por la fecha de inicio del evento dentro del intervalo semiabierto `[?, ?)`
+     *    (`e.fecha_inicio >= ? AND e.fecha_inicio < ?`), de modo que un evento iniciado el domingo
+     *    y terminado el lunes siguiente pertenece íntegramente a la semana en que empezó.
+     * 5. Agrupa por categoría (`GROUP BY c.id, c.nombre`) y suma las duraciones en SQLite sin
+     *    recorrer los eventos en un ciclo Kotlin.
+     */
+    fun consultarSegundosSemanalesPorCategoriaSql(
+        lunesInicio: LocalDateTime,
+        lunesSiguienteExclusivo: LocalDateTime
+    ): Map<Long, Long> {
+        val inicioIso = Evento.formatearIso(lunesInicio)
+        val finExclusivoIso = Evento.formatearIso(lunesSiguienteExclusivo)
+
+        val db = readableDatabase
+        val query = """
+            SELECT c.$COL_CAT_ID,
+                   c.$COL_CAT_NOMBRE,
+                   COALESCE(
+                       SUM(
+                           COALESCE(
+                               e.$COL_EVENT_DURACION_SEGUNDOS,
+                               CAST(ROUND((julianday(e.$COL_EVENT_FECHA_FIN) - julianday(e.$COL_EVENT_FECHA_INICIO)) * 86400.0) AS INTEGER)
+                           )
+                       ),
+                       0
+                   ) AS total_segundos
+            FROM $TABLE_EVENTOS e
+            JOIN $TABLE_TAREAS t ON t.$COL_TASK_ID = e.$COL_EVENT_TAREA_ID
+            JOIN $TABLE_CATEGORIAS c ON c.$COL_CAT_ID = t.$COL_TASK_CATEGORIA_ID
+            WHERE e.$COL_EVENT_FECHA_FIN IS NOT NULL
+              AND e.$COL_EVENT_ESTADO = '${Evento.ESTADO_FINALIZADO}'
+              AND e.$COL_EVENT_FECHA_INICIO >= ?
+              AND e.$COL_EVENT_FECHA_INICIO < ?
+            GROUP BY c.$COL_CAT_ID, c.$COL_CAT_NOMBRE
+        """.trimIndent()
+
+        val resultado = mutableMapOf<Long, Long>()
+        val cursor = db.rawQuery(query, arrayOf(inicioIso, finExclusivoIso))
+        cursor.use {
+            while (it.moveToNext()) {
+                val catId = it.getLong(0)
+                val totalSegundos = it.getLong(2).coerceAtLeast(0L)
+                resultado[catId] = totalSegundos
+            }
+        }
+        return resultado
+    }
+
+    /**
+     * Obtiene el `ResumenSemanal` completo para la semana que contiene a `fechaReferencia`
+     * (por defecto, la fecha actual del dispositivo `LocalDate.now()`).
+     *
+     * Incluye automáticamente todas las categorías existentes en SQLite (incluyendo las nuevas
+     * creadas en el Sprint 1 aunque tengan 0 eventos) más la fila "Sin registrar" sobre las 168 horas.
+     */
+    fun obtenerResumenSemanal(fechaReferencia: LocalDate = LocalDate.now()): ResumenSemanal {
+        val lunesInicio = ResumenSemanal.obtenerLunesInicioSemana(fechaReferencia)
+        val lunesSiguiente = ResumenSemanal.obtenerLunesSiguienteExclusivo(fechaReferencia)
+        val categorias = listarCategorias()
+        val segundosPorCategoria = consultarSegundosSemanalesPorCategoriaSql(lunesInicio, lunesSiguiente)
+        return ResumenSemanal.construir(
+            categorias = categorias,
+            segundosPorCategoriaId = segundosPorCategoria,
+            fechaReferencia = fechaReferencia
         )
     }
 

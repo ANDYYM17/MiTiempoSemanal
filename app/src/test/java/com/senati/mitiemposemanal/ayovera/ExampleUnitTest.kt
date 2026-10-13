@@ -115,4 +115,49 @@ class ExampleUnitTest {
         assertEquals("19:55:15", eventoFinalizado.formatearHoraFinConSegundos())
         assertEquals("1 h 25 min", eventoFinalizado.formatearDuracion(fin))
     }
+
+    @Test
+    fun resumenSemanal_limitesLunesADomingoYCalculoSobre168Horas_Sprint3() {
+        val categorias = listOf(
+            com.senati.mitiemposemanal.ayovera.model.Categoria(1L, "Estudio"),
+            com.senati.mitiemposemanal.ayovera.model.Categoria(2L, "Trabajo"),
+            com.senati.mitiemposemanal.ayovera.model.Categoria(3L, "Descanso"),
+            com.senati.mitiemposemanal.ayovera.model.Categoria(4L, "Ocio")
+        )
+        val fechaMiercoles = java.time.LocalDate.of(2026, 10, 14)
+
+        // Escenario A: Semana vacía
+        val resumenVacio = com.senati.mitiemposemanal.ayovera.model.ResumenSemanal.construir(
+            categorias = categorias,
+            segundosPorCategoriaId = emptyMap(),
+            fechaReferencia = fechaMiercoles
+        )
+        assertEquals("Semana 12/10/2026 – 18/10/2026", resumenVacio.formatearRangoSemana())
+        assertEquals(LocalDateTime.of(2026, 10, 12, 0, 0, 0), resumenVacio.lunesInicio)
+        assertEquals(LocalDateTime.of(2026, 10, 19, 0, 0, 0), resumenVacio.lunesSiguienteExclusivo)
+
+        resumenVacio.filasCategorias.forEach { fila ->
+            assertEquals("0 h 00 min", fila.formatearHorasYMinutos())
+            assertEquals("0.0 %", fila.formatearPorcentaje())
+            assertEquals(0, fila.obtenerProgresoVisualPorMil())
+        }
+        assertEquals("168 h 00 min", resumenVacio.filaSinRegistrar.formatearHorasYMinutos())
+        assertEquals("100.0 %", resumenVacio.filaSinRegistrar.formatearPorcentaje())
+        assertEquals(1000, resumenVacio.filaSinRegistrar.obtenerProgresoVisualPorMil())
+
+        // Escenario B: 21 horas en Estudio -> 12.5 %, Sin registrar -> 147 h (87.5 %)
+        val resumen21h = com.senati.mitiemposemanal.ayovera.model.ResumenSemanal.construir(
+            categorias = categorias,
+            segundosPorCategoriaId = mapOf(1L to 21L * 3600L),
+            fechaReferencia = fechaMiercoles
+        )
+        val filaEstudio = resumen21h.filasCategorias.first { it.nombreCategoria == "Estudio" }
+        assertEquals("21 h 00 min", filaEstudio.formatearHorasYMinutos())
+        assertEquals(12.5, filaEstudio.porcentajeSemanal, 0.0001)
+        assertEquals("12.5 %", filaEstudio.formatearPorcentaje())
+
+        assertEquals("147 h 00 min", resumen21h.filaSinRegistrar.formatearHorasYMinutos())
+        assertEquals(87.5, resumen21h.filaSinRegistrar.porcentajeSemanal, 0.0001)
+        assertEquals("87.5 %", resumen21h.filaSinRegistrar.formatearPorcentaje())
+    }
 }

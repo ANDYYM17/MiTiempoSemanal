@@ -10,6 +10,7 @@ import android.os.Handler
 import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -31,6 +32,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.senati.mitiemposemanal.ayovera.data.AdminSQLiteOpenHelper
 import com.senati.mitiemposemanal.ayovera.data.ResultadoEliminacionCategoria
 import com.senati.mitiemposemanal.ayovera.data.ResultadoEvento
@@ -38,6 +40,7 @@ import com.senati.mitiemposemanal.ayovera.data.ResultadoOperacion
 import com.senati.mitiemposemanal.ayovera.data.ValidationLogic
 import com.senati.mitiemposemanal.ayovera.model.Categoria
 import com.senati.mitiemposemanal.ayovera.model.Evento
+import com.senati.mitiemposemanal.ayovera.model.ResumenSemanal
 import com.senati.mitiemposemanal.ayovera.model.Tarea
 import com.senati.mitiemposemanal.ayovera.ui.CategoryAdapter
 import com.senati.mitiemposemanal.ayovera.ui.CategoryVisualStyle
@@ -45,15 +48,17 @@ import com.senati.mitiemposemanal.ayovera.ui.DialogHelper
 import com.senati.mitiemposemanal.ayovera.ui.EventHistoryAdapter
 import com.senati.mitiemposemanal.ayovera.ui.EventTaskSearchAdapter
 import com.senati.mitiemposemanal.ayovera.ui.TaskAdapter
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * Actividad principal de MiTiempoSemanal (Sprints 1 y 2 SENATI).
+ * Actividad principal de MiTiempoSemanal (Sprints 1, 2 y 3 SENATI).
  * Integra la navegación entre:
- * - Pantalla 1: Inicio (Dashboard, nombre de la app, estudiante · v0.2.0 (2), accesos rápidos, categorías iniciales y vista previa de tareas)
+ * - Pantalla 1: Inicio (Dashboard, nombre de la app, estudiante · v0.3.0 (3), accesos rápidos, categorías iniciales y vista previa de tareas)
  * - Pantalla 2: Mis Categorías (HU-01)
  * - Pantalla 5: Mis Tareas y Estado Vacío (HU-02)
- * - Pantallas 10, 11, 12, 13, 14 y 15: Eventos, Búsqueda en Tiempo Real (HU-03), Crear Tarea desde Eventos (HU-04),
+ * - Pantallas 10 a 17: Eventos con Panel Semanal de 168 horas por Categoría (Sprint 3),
+ *   Búsqueda en Tiempo Real (HU-03), Crear Tarea desde Eventos (HU-04),
  *   Evento en Curso e Inicio/Fin de Eventos con Persistencia en SQLite (HU-05) e Historial de Eventos.
  */
 class MainActivity : AppCompatActivity() {
@@ -102,6 +107,19 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvEmptyStateTitle: TextView
     private lateinit var tvEmptyStateDesc: TextView
 
+    // Pantallas 16 y 17 (Sprint 3): Panel Semanal "Mi tiempo esta semana"
+    private lateinit var cardWeeklySummaryPanel: MaterialCardView
+    private lateinit var tvWeeklyPanelTitle: TextView
+    private lateinit var tvWeeklyDateRange: TextView
+    private lateinit var tvWeeklySyncBadge: TextView
+    private lateinit var tvWeekly168hReferenceLabel: TextView
+    private lateinit var tvWeeklyTotalRegisteredSummary: TextView
+    private lateinit var llWeeklyStackedBar: LinearLayout
+    private lateinit var llWeeklyOverflowWarningBanner: LinearLayout
+    private lateinit var tvWeeklyOverflowWarningText: TextView
+    private lateinit var llWeeklyCategoryRowsContainer: LinearLayout
+    private lateinit var tvWeeklyFormulaNote: TextView
+
     // Pantallas 10, 11 y 13: Eventos Views
     private lateinit var llEventsSearchLockedBanner: LinearLayout
     private lateinit var llEventSearchInputBox: LinearLayout
@@ -146,10 +164,17 @@ class MainActivity : AppCompatActivity() {
     private var filtroCategoriaIdTarea: Long? = null
     private var tareaSeleccionadaEnEventos: Tarea? = null
     private var actualizandoTextoPorSeleccion: Boolean = false
+    private var ultimoLunesRenderizado: LocalDate? = null
 
     private val timerHandler = Handler(Looper.getMainLooper())
     private val timerRunnable = object : Runnable {
         override fun run() {
+            val hoy = LocalDate.now()
+            val lunesActual = ResumenSemanal.obtenerLunesInicioSemana(hoy).toLocalDate()
+            if (ultimoLunesRenderizado != null && ultimoLunesRenderizado != lunesActual) {
+                actualizarPanelSemanalEventos(hoy)
+            }
+
             val activo = dbHelper.obtenerEventoActivo()
             if (activo != null) {
                 val segundos = activo.obtenerSegundosTranscurridos(LocalDateTime.now())
@@ -241,6 +266,19 @@ class MainActivity : AppCompatActivity() {
         cardEmptyTasksState = findViewById(R.id.cardEmptyTasksState)
         tvEmptyStateTitle = findViewById(R.id.tvEmptyStateTitle)
         tvEmptyStateDesc = findViewById(R.id.tvEmptyStateDesc)
+
+        // Pantallas 16 y 17 (Sprint 3: Panel Semanal)
+        cardWeeklySummaryPanel = findViewById(R.id.cardWeeklySummaryPanel)
+        tvWeeklyPanelTitle = findViewById(R.id.tvWeeklyPanelTitle)
+        tvWeeklyDateRange = findViewById(R.id.tvWeeklyDateRange)
+        tvWeeklySyncBadge = findViewById(R.id.tvWeeklySyncBadge)
+        tvWeekly168hReferenceLabel = findViewById(R.id.tvWeekly168hReferenceLabel)
+        tvWeeklyTotalRegisteredSummary = findViewById(R.id.tvWeeklyTotalRegisteredSummary)
+        llWeeklyStackedBar = findViewById(R.id.llWeeklyStackedBar)
+        llWeeklyOverflowWarningBanner = findViewById(R.id.llWeeklyOverflowWarningBanner)
+        tvWeeklyOverflowWarningText = findViewById(R.id.tvWeeklyOverflowWarningText)
+        llWeeklyCategoryRowsContainer = findViewById(R.id.llWeeklyCategoryRowsContainer)
+        tvWeeklyFormulaNote = findViewById(R.id.tvWeeklyFormulaNote)
 
         // Pantallas 10, 11 y 13 (Eventos)
         llEventsSearchLockedBanner = findViewById(R.id.llEventsSearchLockedBanner)
@@ -727,6 +765,9 @@ class MainActivity : AppCompatActivity() {
             btnStopEvent.isEnabled = false
         }
 
+        // Actualizar Panel Semanal de 168 horas por Categoría (Sprint 3 - Pantallas 16 y 17)
+        actualizarPanelSemanalEventos()
+
         // Actualizar lista de últimos eventos registrados en Eventos
         val eventosRecientes = dbHelper.listarEventos(categoriaIdFiltro = null, limite = 5)
         if (eventosRecientes.isEmpty()) {
@@ -736,6 +777,165 @@ class MainActivity : AppCompatActivity() {
             rvRecentEvents.visibility = View.VISIBLE
             cardEmptyRecentEvents.visibility = View.GONE
             recentEventsAdapter.actualizarDatos(eventosRecientes)
+        }
+    }
+
+    /**
+     * Sprint 3 (Secciones 4 a 11 y Pantallas 16 y 17 de Stitch):
+     * - Calcula los límites de la semana actual (lunes 00:00 a domingo 23:59:59).
+     * - Consulta SQLite con `SUM` y `GROUP BY` (únicamente eventos finalizados iniciados en esa semana).
+     * - Genera dinámicamente en `llWeeklyCategoryRowsContainer` una fila por cada categoría existente
+     *   más la fila adicional "Sin registrar", sin filas fijas en el XML.
+     * - Actualiza también la barra segmentada global de las 168 horas.
+     */
+    fun actualizarPanelSemanalEventos(fechaReferencia: LocalDate = LocalDate.now()) {
+        val resumen = dbHelper.obtenerResumenSemanal(fechaReferencia)
+        ultimoLunesRenderizado = resumen.lunesInicio.toLocalDate()
+
+        tvWeeklyPanelTitle.text = getString(R.string.weekly_panel_title)
+        tvWeeklyDateRange.text = resumen.formatearRangoSemanaConDias()
+        tvWeeklyTotalRegisteredSummary.text = resumen.formatearResumenRegistradoSobre168h()
+
+        // Manejo seguro e informativo si por datos inconsistentes se superan las 168 horas (Secciones 8 y 9)
+        if (resumen.excedeLimiteSemanal) {
+            llWeeklyOverflowWarningBanner.visibility = View.VISIBLE
+            val excesoStr = ResumenSemanal.formatearSegundosAHorasYMinutos(resumen.excesoSegundos)
+            tvWeeklyOverflowWarningText.text =
+                "Atención: El tiempo registrado esta semana supera las 168 h en $excesoStr. Se conservan los datos originales y las barras se ajustan al 100 % visual."
+        } else {
+            llWeeklyOverflowWarningBanner.visibility = View.GONE
+        }
+
+        // 1. Renderizar barra segmentada global de las 168 horas (1000 unidades)
+        llWeeklyStackedBar.removeAllViews()
+        val density = resources.displayMetrics.density
+        var sumaPesosCategorias = 0
+        resumen.filasCategorias.forEach { filaCat ->
+            val peso = filaCat.obtenerProgresoVisualPorMil()
+            if (peso > 0) {
+                val estilo = CategoryVisualStyle.obtenerEstilo(filaCat.nombreCategoria)
+                val segView = View(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        peso.toFloat()
+                    ).apply {
+                        marginEnd = (1.5f * density).toInt()
+                    }
+                    setBackgroundResource(R.drawable.bg_pill)
+                    backgroundTintList = ColorStateList.valueOf(
+                        ContextCompat.getColor(this@MainActivity, estilo.accentColorRes)
+                    )
+                }
+                llWeeklyStackedBar.addView(segView)
+                sumaPesosCategorias += peso
+            }
+        }
+
+        val pesoRestante = (1000 - sumaPesosCategorias).coerceAtLeast(0)
+        if (pesoRestante > 0) {
+            val segSinRegistrar = View(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    pesoRestante.toFloat()
+                )
+                setBackgroundResource(R.drawable.bg_pill)
+                backgroundTintList = ColorStateList.valueOf(
+                    ContextCompat.getColor(this@MainActivity, R.color.surface_container_high)
+                )
+            }
+            llWeeklyStackedBar.addView(segSinRegistrar)
+        }
+
+        // 2. Generar dinámicamente las filas de cada categoría + la fila "Sin registrar" (Sección 6)
+        llWeeklyCategoryRowsContainer.removeAllViews()
+        val inflater = LayoutInflater.from(this)
+
+        resumen.todasLasFilas.forEach { fila ->
+            val rowView = inflater.inflate(
+                R.layout.item_weekly_category_row,
+                llWeeklyCategoryRowsContainer,
+                false
+            )
+
+            val llRowRoot = rowView.findViewById<LinearLayout>(R.id.llWeeklyRowRoot)
+            val flIconBox = rowView.findViewById<FrameLayout>(R.id.flWeeklyRowIconBox)
+            val ivIcon = rowView.findViewById<ImageView>(R.id.ivWeeklyRowIcon)
+            val tvCategoryName = rowView.findViewById<TextView>(R.id.tvWeeklyRowCategoryName)
+            val viewColorDot = rowView.findViewById<View>(R.id.viewWeeklyRowColorDot)
+            val tvCustomBadge = rowView.findViewById<TextView>(R.id.tvWeeklyRowCustomBadge)
+            val tvHours = rowView.findViewById<TextView>(R.id.tvWeeklyRowHours)
+            val tvPercent = rowView.findViewById<TextView>(R.id.tvWeeklyRowPercent)
+            val pbProgress = rowView.findViewById<LinearProgressIndicator>(R.id.pbWeeklyRowProgress)
+
+            tvCategoryName.text = fila.nombreCategoria
+            tvHours.text = fila.formatearHorasYMinutos()
+            tvPercent.text = fila.formatearPorcentaje()
+            pbProgress.max = 1000
+            pbProgress.progress = fila.obtenerProgresoVisualPorMil()
+
+            if (fila.esSinRegistrar) {
+                // Estilo Stitch Pantalla 16 para la fila especial "Sin registrar"
+                llRowRoot.backgroundTintList = ColorStateList.valueOf(
+                    ContextCompat.getColor(this, R.color.surface_container_low)
+                )
+                flIconBox.backgroundTintList = ColorStateList.valueOf(
+                    ContextCompat.getColor(this, R.color.surface_container_highest)
+                )
+                ivIcon.setImageResource(R.drawable.ic_hourglass)
+                ivIcon.imageTintList = ColorStateList.valueOf(
+                    ContextCompat.getColor(this, R.color.on_surface_variant)
+                )
+                tvCategoryName.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
+                viewColorDot.visibility = View.GONE
+                tvCustomBadge.visibility = View.GONE
+
+                tvHours.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
+                tvPercent.backgroundTintList = ColorStateList.valueOf(
+                    ContextCompat.getColor(this, R.color.surface_container)
+                )
+                tvPercent.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
+
+                pbProgress.setIndicatorColor(ContextCompat.getColor(this, R.color.outline_variant))
+                pbProgress.trackColor = ContextCompat.getColor(this, R.color.surface_container_highest)
+            } else {
+                // Estilo Stitch Pantallas 16 y 17 para cada categoría de SQLite
+                val estilo = CategoryVisualStyle.obtenerEstilo(fila.nombreCategoria)
+                val accentColor = ContextCompat.getColor(this, estilo.accentColorRes)
+                val badgeBgColor = ContextCompat.getColor(this, estilo.badgeBgColorRes)
+                val badgeTextColor = ContextCompat.getColor(this, estilo.badgeTextColorRes)
+
+                llRowRoot.backgroundTintList = ColorStateList.valueOf(
+                    ContextCompat.getColor(
+                        this,
+                        if (fila.esCategoriaInicial) R.color.surface_container_lowest else R.color.surface_container_low
+                    )
+                )
+                flIconBox.backgroundTintList = ColorStateList.valueOf(badgeBgColor)
+                ivIcon.setImageResource(estilo.iconRes)
+                ivIcon.imageTintList = ColorStateList.valueOf(accentColor)
+
+                tvCategoryName.setTextColor(ContextCompat.getColor(this, R.color.on_surface))
+                viewColorDot.visibility = View.VISIBLE
+                viewColorDot.backgroundTintList = ColorStateList.valueOf(accentColor)
+                tvCustomBadge.visibility = if (fila.esCategoriaInicial) View.GONE else View.VISIBLE
+
+                val tieneTiempo = fila.totalSegundos > 0L
+                tvHours.setTextColor(
+                    ContextCompat.getColor(
+                        this,
+                        if (tieneTiempo) R.color.on_surface else R.color.on_surface_variant
+                    )
+                )
+                tvPercent.backgroundTintList = ColorStateList.valueOf(badgeBgColor)
+                tvPercent.setTextColor(badgeTextColor)
+
+                pbProgress.setIndicatorColor(accentColor)
+                pbProgress.trackColor = ContextCompat.getColor(this, R.color.surface_container)
+            }
+
+            llWeeklyCategoryRowsContainer.addView(rowView)
         }
     }
 
@@ -793,7 +993,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Muestra el nombre del estudiante y la versión actual:
-     * "Nombre Apellido · v0.2.0 (2)"
+     * "Nombre Apellido · v0.3.0 (3)"
      */
     private fun actualizarCabeceraEstudianteYVersion() {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -802,7 +1002,7 @@ class MainActivity : AppCompatActivity() {
             ?: getString(R.string.student_name)
 
         val pkgInfo = packageManager.getPackageInfo(packageName, 0)
-        val versionName = pkgInfo.versionName ?: "0.2.0"
+        val versionName = pkgInfo.versionName ?: "0.3.0"
         val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             pkgInfo.longVersionCode
         } else {
