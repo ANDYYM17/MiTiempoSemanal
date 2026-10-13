@@ -12,11 +12,14 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -40,6 +43,8 @@ import com.senati.mitiemposemanal.ayovera.data.ResultadoOperacion
 import com.senati.mitiemposemanal.ayovera.data.ValidationLogic
 import com.senati.mitiemposemanal.ayovera.model.Categoria
 import com.senati.mitiemposemanal.ayovera.model.Evento
+import com.senati.mitiemposemanal.ayovera.model.FilaCategoriaSemanal
+import com.senati.mitiemposemanal.ayovera.model.ReporteSemanal
 import com.senati.mitiemposemanal.ayovera.model.ResumenSemanal
 import com.senati.mitiemposemanal.ayovera.model.Tarea
 import com.senati.mitiemposemanal.ayovera.ui.CategoryAdapter
@@ -52,14 +57,15 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * Actividad principal de MiTiempoSemanal (Sprints 1, 2 y 3 SENATI).
+ * Actividad principal de MiTiempoSemanal (Sprints 1, 2, 3 y 4 SENATI — v1.0.0).
  * Integra la navegación entre:
- * - Pantalla 1: Inicio (Dashboard, nombre de la app, estudiante · v0.3.0 (3), accesos rápidos, categorías iniciales y vista previa de tareas)
+ * - Pantalla 1: Inicio (Dashboard, nombre de la app, estudiante · v1.0.0 (4), accesos rápidos, categorías iniciales y vista previa de tareas)
  * - Pantalla 2: Mis Categorías (HU-01)
  * - Pantalla 5: Mis Tareas y Estado Vacío (HU-02)
  * - Pantallas 10 a 17: Eventos con Panel Semanal de 168 horas por Categoría (Sprint 3),
  *   Búsqueda en Tiempo Real (HU-03), Crear Tarea desde Eventos (HU-04),
  *   Evento en Curso e Inicio/Fin de Eventos con Persistencia en SQLite (HU-05) e Historial de Eventos.
+ * - Pantallas 18 y 19: Cierre Semanal Automático (HU-07) y Pantalla Reportes Históricos (HU-08).
  */
 class MainActivity : AppCompatActivity() {
 
@@ -77,6 +83,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewCategories: NestedScrollView
     private lateinit var viewTasks: NestedScrollView
     private lateinit var viewEvents: NestedScrollView
+    private lateinit var viewReports: NestedScrollView
     private lateinit var fabMain: FloatingActionButton
     private lateinit var bottomNav: BottomNavigationView
 
@@ -154,17 +161,45 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rvRecentEvents: RecyclerView
     private lateinit var cardEmptyRecentEvents: MaterialCardView
 
+    // Pantallas 18 y 19 (Sprint 4): Reportes Semanales y Estado Vacío Views
+    private lateinit var tvReportsTitle: TextView
+    private lateinit var tvReportsSubtitle: TextView
+    private lateinit var cardReportsSpinnerBox: MaterialCardView
+    private lateinit var spinnerReportWeeks: Spinner
+    private lateinit var tvReportSelectedWeekMeta: TextView
+    private lateinit var cardReportsLockedWeekBanner: MaterialCardView
+    private lateinit var llReportsEmptyStateContainer: LinearLayout
+    private lateinit var tvReportsEmptyTitle: TextView
+    private lateinit var tvReportsCurrentCycleSummary: TextView
+    private lateinit var pbReportsCurrentCycleProgress: LinearProgressIndicator
+    private lateinit var btnReportsGoToEvents: MaterialButton
+    private lateinit var llReportsContentContainer: LinearLayout
+    private lateinit var tvReportSummaryWeekRange: TextView
+    private lateinit var tvReportRegisteredHours: TextView
+    private lateinit var tvReportRegisteredPercent: TextView
+    private lateinit var tvReportUnregisteredHours: TextView
+    private lateinit var tvReportUnregisteredPercent: TextView
+    private lateinit var tvReportMonitoredLabel: TextView
+    private lateinit var pbReportTotalProgress: LinearProgressIndicator
+    private lateinit var llReportCategoryRowsContainer: LinearLayout
+    private lateinit var tvReportEventsCountBadge: TextView
+    private lateinit var rvReportWeekEvents: RecyclerView
+
     // Adapters & State
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var taskAdapter: TaskAdapter
     private lateinit var homePreviewTaskAdapter: TaskAdapter
     private lateinit var eventTaskSearchAdapter: EventTaskSearchAdapter
     private lateinit var recentEventsAdapter: EventHistoryAdapter
+    private lateinit var reportWeekEventsAdapter: EventHistoryAdapter
 
     private var filtroCategoriaIdTarea: Long? = null
     private var tareaSeleccionadaEnEventos: Tarea? = null
     private var actualizandoTextoPorSeleccion: Boolean = false
     private var ultimoLunesRenderizado: LocalDate? = null
+    private var reportesDisponibles: List<ReporteSemanal> = emptyList()
+    private var reporteSeleccionadoId: Long? = null
+    private var actualizandoSpinnerReportes: Boolean = false
 
     private val timerHandler = Handler(Looper.getMainLooper())
     private val timerRunnable = object : Runnable {
@@ -172,7 +207,9 @@ class MainActivity : AppCompatActivity() {
             val hoy = LocalDate.now()
             val lunesActual = ResumenSemanal.obtenerLunesInicioSemana(hoy).toLocalDate()
             if (ultimoLunesRenderizado != null && ultimoLunesRenderizado != lunesActual) {
+                dbHelper.ejecutarCierreSemanalAutomatico(hoy)
                 actualizarPanelSemanalEventos(hoy)
+                actualizarPantallaReportes(hoy)
             }
 
             val activo = dbHelper.obtenerEventoActivo()
@@ -210,11 +247,14 @@ class MainActivity : AppCompatActivity() {
 
         dbHelper = AdminSQLiteOpenHelper(this)
         dbHelper.asegurarCategoriasInicialesSiVacio()
+        // HU-07: Ejecutar cierre semanal automático e idempotente al abrir la aplicación
+        dbHelper.ejecutarCierreSemanalAutomatico()
 
         inicializarVistas()
         configurarRecyclerViews()
         configurarNavegacionYBotones()
         configurarEventosYBusquedaEnTiempoReal()
+        configurarPantallaReportes()
         actualizarCabeceraEstudianteYVersion()
         recargarDatosYActualizarUI()
     }
@@ -237,6 +277,7 @@ class MainActivity : AppCompatActivity() {
         viewCategories = findViewById(R.id.viewCategories)
         viewTasks = findViewById(R.id.viewTasks)
         viewEvents = findViewById(R.id.viewEvents)
+        viewReports = findViewById(R.id.viewReports)
         fabMain = findViewById(R.id.fabMain)
         bottomNav = findViewById(R.id.bottomNav)
 
@@ -313,6 +354,30 @@ class MainActivity : AppCompatActivity() {
         btnViewFullEventHistory = findViewById(R.id.btnViewFullEventHistory)
         rvRecentEvents = findViewById(R.id.rvRecentEvents)
         cardEmptyRecentEvents = findViewById(R.id.cardEmptyRecentEvents)
+
+        // Pantallas 18 y 19 (Sprint 4: Reportes Semanales y Estado Vacío)
+        tvReportsTitle = findViewById(R.id.tvReportsTitle)
+        tvReportsSubtitle = findViewById(R.id.tvReportsSubtitle)
+        cardReportsSpinnerBox = findViewById(R.id.cardReportsSpinnerBox)
+        spinnerReportWeeks = findViewById(R.id.spinnerReportWeeks)
+        tvReportSelectedWeekMeta = findViewById(R.id.tvReportSelectedWeekMeta)
+        cardReportsLockedWeekBanner = findViewById(R.id.cardReportsLockedWeekBanner)
+        llReportsEmptyStateContainer = findViewById(R.id.llReportsEmptyStateContainer)
+        tvReportsEmptyTitle = findViewById(R.id.tvReportsEmptyTitle)
+        tvReportsCurrentCycleSummary = findViewById(R.id.tvReportsCurrentCycleSummary)
+        pbReportsCurrentCycleProgress = findViewById(R.id.pbReportsCurrentCycleProgress)
+        btnReportsGoToEvents = findViewById(R.id.btnReportsGoToEvents)
+        llReportsContentContainer = findViewById(R.id.llReportsContentContainer)
+        tvReportSummaryWeekRange = findViewById(R.id.tvReportSummaryWeekRange)
+        tvReportRegisteredHours = findViewById(R.id.tvReportRegisteredHours)
+        tvReportRegisteredPercent = findViewById(R.id.tvReportRegisteredPercent)
+        tvReportUnregisteredHours = findViewById(R.id.tvReportUnregisteredHours)
+        tvReportUnregisteredPercent = findViewById(R.id.tvReportUnregisteredPercent)
+        tvReportMonitoredLabel = findViewById(R.id.tvReportMonitoredLabel)
+        pbReportTotalProgress = findViewById(R.id.pbReportTotalProgress)
+        llReportCategoryRowsContainer = findViewById(R.id.llReportCategoryRowsContainer)
+        tvReportEventsCountBadge = findViewById(R.id.tvReportEventsCountBadge)
+        rvReportWeekEvents = findViewById(R.id.rvReportWeekEvents)
     }
 
     private fun configurarRecyclerViews() {
@@ -360,6 +425,16 @@ class MainActivity : AppCompatActivity() {
         rvRecentEvents.isFocusable = false
         rvRecentEvents.isFocusableInTouchMode = false
         rvRecentEvents.adapter = recentEventsAdapter
+
+        reportWeekEventsAdapter = EventHistoryAdapter(
+            eventos = emptyList(),
+            onEventoClick = null
+        )
+        rvReportWeekEvents.layoutManager = LinearLayoutManager(this)
+        rvReportWeekEvents.itemAnimator = null
+        rvReportWeekEvents.isFocusable = false
+        rvReportWeekEvents.isFocusableInTouchMode = false
+        rvReportWeekEvents.adapter = reportWeekEventsAdapter
     }
 
     private fun configurarNavegacionYBotones() {
@@ -379,6 +454,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.nav_events -> {
                     mostrarSeccion(SeccionActiva.EVENTOS)
+                    true
+                }
+                R.id.nav_reports -> {
+                    mostrarSeccion(SeccionActiva.REPORTES)
                     true
                 }
                 else -> false
@@ -850,93 +929,254 @@ class MainActivity : AppCompatActivity() {
 
         // 2. Generar dinámicamente las filas de cada categoría + la fila "Sin registrar" (Sección 6)
         llWeeklyCategoryRowsContainer.removeAllViews()
-        val inflater = LayoutInflater.from(this)
-
         resumen.todasLasFilas.forEach { fila ->
-            val rowView = inflater.inflate(
-                R.layout.item_weekly_category_row,
-                llWeeklyCategoryRowsContainer,
-                false
+            inflarFilaCategoriaEnContenedor(llWeeklyCategoryRowsContainer, fila)
+        }
+    }
+
+    /**
+     * Infla y estiliza una fila individual de categoría o la fila especial "Sin registrar"
+     * usando `item_weekly_category_row.xml` (reutilizado en el panel de Eventos y en Reportes).
+     */
+    private fun inflarFilaCategoriaEnContenedor(
+        contenedor: LinearLayout,
+        fila: FilaCategoriaSemanal
+    ) {
+        val inflater = LayoutInflater.from(this)
+        val rowView = inflater.inflate(
+            R.layout.item_weekly_category_row,
+            contenedor,
+            false
+        )
+
+        val llRowRoot = rowView.findViewById<LinearLayout>(R.id.llWeeklyRowRoot)
+        val flIconBox = rowView.findViewById<FrameLayout>(R.id.flWeeklyRowIconBox)
+        val ivIcon = rowView.findViewById<ImageView>(R.id.ivWeeklyRowIcon)
+        val tvCategoryName = rowView.findViewById<TextView>(R.id.tvWeeklyRowCategoryName)
+        val viewColorDot = rowView.findViewById<View>(R.id.viewWeeklyRowColorDot)
+        val tvCustomBadge = rowView.findViewById<TextView>(R.id.tvWeeklyRowCustomBadge)
+        val tvHours = rowView.findViewById<TextView>(R.id.tvWeeklyRowHours)
+        val tvPercent = rowView.findViewById<TextView>(R.id.tvWeeklyRowPercent)
+        val pbProgress = rowView.findViewById<LinearProgressIndicator>(R.id.pbWeeklyRowProgress)
+
+        tvCategoryName.text = fila.nombreCategoria
+        tvHours.text = fila.formatearHorasYMinutos()
+        tvPercent.text = fila.formatearPorcentaje()
+        pbProgress.max = 1000
+        pbProgress.progress = fila.obtenerProgresoVisualPorMil()
+
+        if (fila.esSinRegistrar) {
+            llRowRoot.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(this, R.color.surface_container_low)
             )
+            flIconBox.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(this, R.color.surface_container_highest)
+            )
+            ivIcon.setImageResource(R.drawable.ic_hourglass)
+            ivIcon.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(this, R.color.on_surface_variant)
+            )
+            tvCategoryName.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
+            viewColorDot.visibility = View.GONE
+            tvCustomBadge.visibility = View.GONE
 
-            val llRowRoot = rowView.findViewById<LinearLayout>(R.id.llWeeklyRowRoot)
-            val flIconBox = rowView.findViewById<FrameLayout>(R.id.flWeeklyRowIconBox)
-            val ivIcon = rowView.findViewById<ImageView>(R.id.ivWeeklyRowIcon)
-            val tvCategoryName = rowView.findViewById<TextView>(R.id.tvWeeklyRowCategoryName)
-            val viewColorDot = rowView.findViewById<View>(R.id.viewWeeklyRowColorDot)
-            val tvCustomBadge = rowView.findViewById<TextView>(R.id.tvWeeklyRowCustomBadge)
-            val tvHours = rowView.findViewById<TextView>(R.id.tvWeeklyRowHours)
-            val tvPercent = rowView.findViewById<TextView>(R.id.tvWeeklyRowPercent)
-            val pbProgress = rowView.findViewById<LinearProgressIndicator>(R.id.pbWeeklyRowProgress)
+            tvHours.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
+            tvPercent.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(this, R.color.surface_container)
+            )
+            tvPercent.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
 
-            tvCategoryName.text = fila.nombreCategoria
-            tvHours.text = fila.formatearHorasYMinutos()
-            tvPercent.text = fila.formatearPorcentaje()
-            pbProgress.max = 1000
-            pbProgress.progress = fila.obtenerProgresoVisualPorMil()
+            pbProgress.setIndicatorColor(ContextCompat.getColor(this, R.color.outline_variant))
+            pbProgress.trackColor = ContextCompat.getColor(this, R.color.surface_container_highest)
+        } else {
+            val estilo = CategoryVisualStyle.obtenerEstilo(fila.nombreCategoria)
+            val accentColor = ContextCompat.getColor(this, estilo.accentColorRes)
+            val badgeBgColor = ContextCompat.getColor(this, estilo.badgeBgColorRes)
+            val badgeTextColor = ContextCompat.getColor(this, estilo.badgeTextColorRes)
 
-            if (fila.esSinRegistrar) {
-                // Estilo Stitch Pantalla 16 para la fila especial "Sin registrar"
-                llRowRoot.backgroundTintList = ColorStateList.valueOf(
-                    ContextCompat.getColor(this, R.color.surface_container_low)
+            llRowRoot.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(
+                    this,
+                    if (fila.esCategoriaInicial) R.color.surface_container_lowest else R.color.surface_container_low
                 )
-                flIconBox.backgroundTintList = ColorStateList.valueOf(
-                    ContextCompat.getColor(this, R.color.surface_container_highest)
+            )
+            flIconBox.backgroundTintList = ColorStateList.valueOf(badgeBgColor)
+            ivIcon.setImageResource(estilo.iconRes)
+            ivIcon.imageTintList = ColorStateList.valueOf(accentColor)
+
+            tvCategoryName.setTextColor(ContextCompat.getColor(this, R.color.on_surface))
+            viewColorDot.visibility = View.VISIBLE
+            viewColorDot.backgroundTintList = ColorStateList.valueOf(accentColor)
+            tvCustomBadge.visibility = if (fila.esCategoriaInicial) View.GONE else View.VISIBLE
+
+            val tieneTiempo = fila.totalSegundos > 0L
+            tvHours.setTextColor(
+                ContextCompat.getColor(
+                    this,
+                    if (tieneTiempo) R.color.on_surface else R.color.on_surface_variant
                 )
-                ivIcon.setImageResource(R.drawable.ic_hourglass)
-                ivIcon.imageTintList = ColorStateList.valueOf(
-                    ContextCompat.getColor(this, R.color.on_surface_variant)
-                )
-                tvCategoryName.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
-                viewColorDot.visibility = View.GONE
-                tvCustomBadge.visibility = View.GONE
+            )
+            tvPercent.backgroundTintList = ColorStateList.valueOf(badgeBgColor)
+            tvPercent.setTextColor(badgeTextColor)
 
-                tvHours.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
-                tvPercent.backgroundTintList = ColorStateList.valueOf(
-                    ContextCompat.getColor(this, R.color.surface_container)
-                )
-                tvPercent.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
+            pbProgress.setIndicatorColor(accentColor)
+            pbProgress.trackColor = ContextCompat.getColor(this, R.color.surface_container)
+        }
 
-                pbProgress.setIndicatorColor(ContextCompat.getColor(this, R.color.outline_variant))
-                pbProgress.trackColor = ContextCompat.getColor(this, R.color.surface_container_highest)
-            } else {
-                // Estilo Stitch Pantallas 16 y 17 para cada categoría de SQLite
-                val estilo = CategoryVisualStyle.obtenerEstilo(fila.nombreCategoria)
-                val accentColor = ContextCompat.getColor(this, estilo.accentColorRes)
-                val badgeBgColor = ContextCompat.getColor(this, estilo.badgeBgColorRes)
-                val badgeTextColor = ContextCompat.getColor(this, estilo.badgeTextColorRes)
+        contenedor.addView(rowView)
+    }
 
-                llRowRoot.backgroundTintList = ColorStateList.valueOf(
-                    ContextCompat.getColor(
-                        this,
-                        if (fila.esCategoriaInicial) R.color.surface_container_lowest else R.color.surface_container_low
-                    )
-                )
-                flIconBox.backgroundTintList = ColorStateList.valueOf(badgeBgColor)
-                ivIcon.setImageResource(estilo.iconRes)
-                ivIcon.imageTintList = ColorStateList.valueOf(accentColor)
+    // =========================================================================
+    // SPRINT 4 (HU-07 y HU-08): PANTALLA REPORTES Y SPINNER DE SEMANAS
+    // =========================================================================
 
-                tvCategoryName.setTextColor(ContextCompat.getColor(this, R.color.on_surface))
-                viewColorDot.visibility = View.VISIBLE
-                viewColorDot.backgroundTintList = ColorStateList.valueOf(accentColor)
-                tvCustomBadge.visibility = if (fila.esCategoriaInicial) View.GONE else View.VISIBLE
+    private fun configurarPantallaReportes() {
+        btnReportsGoToEvents.setOnClickListener {
+            bottomNav.selectedItemId = R.id.nav_events
+        }
 
-                val tieneTiempo = fila.totalSegundos > 0L
-                tvHours.setTextColor(
-                    ContextCompat.getColor(
-                        this,
-                        if (tieneTiempo) R.color.on_surface else R.color.on_surface_variant
-                    )
-                )
-                tvPercent.backgroundTintList = ColorStateList.valueOf(badgeBgColor)
-                tvPercent.setTextColor(badgeTextColor)
-
-                pbProgress.setIndicatorColor(accentColor)
-                pbProgress.trackColor = ContextCompat.getColor(this, R.color.surface_container)
+        spinnerReportWeeks.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                if (actualizandoSpinnerReportes) return
+                val seleccionado = reportesDisponibles.getOrNull(position) ?: return
+                reporteSeleccionadoId = seleccionado.id
+                renderizarReporteSeleccionado(seleccionado)
             }
 
-            llWeeklyCategoryRowsContainer.addView(rowView)
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         }
+    }
+
+    /**
+     * HU-07 y HU-08 (Secciones 4, 5, 8 y 9):
+     * 1. Ejecuta el cierre semanal automático de forma idempotente para asegurar que cualquier
+     *    semana pasada con eventos finalizados ya tenga su reporte persistido en SQLite.
+     * 2. Consulta los reportes desde SQLite ordenados del más reciente al más antiguo.
+     * 3. Si no hay reportes, deja el Spinner sin semanas ficticias y muestra el estado vacío
+     *    con "Aún no hay reportes" (Stitch Pantalla 19).
+     * 4. Si hay reportes, puebla el Spinner con los rangos reales `dd/MM/yyyy – dd/MM/yyyy`
+     *    y carga el reporte seleccionado junto con sus eventos históricos (Stitch Pantalla 18).
+     */
+    fun actualizarPantallaReportes(fechaActual: LocalDate = LocalDate.now()) {
+        dbHelper.ejecutarCierreSemanalAutomatico(fechaActual)
+        reportesDisponibles = dbHelper.listarReportesSemanales()
+
+        if (reportesDisponibles.isEmpty()) {
+            reporteSeleccionadoId = null
+            actualizandoSpinnerReportes = true
+            spinnerReportWeeks.adapter = ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_item,
+                emptyList<String>()
+            )
+            spinnerReportWeeks.isEnabled = false
+            actualizandoSpinnerReportes = false
+
+            cardReportsSpinnerBox.visibility = View.GONE
+            cardReportsLockedWeekBanner.visibility = View.VISIBLE
+            llReportsEmptyStateContainer.visibility = View.VISIBLE
+            llReportsContentContainer.visibility = View.GONE
+
+            tvReportsEmptyTitle.text = getString(R.string.reports_empty_title)
+            val resumenActual = dbHelper.obtenerResumenSemanal(fechaActual)
+            val tiempoActual = ResumenSemanal.formatearSegundosAHorasYMinutos(resumenActual.totalSegundosRegistrados)
+            tvReportsCurrentCycleSummary.text = "$tiempoActual / 168 h"
+            pbReportsCurrentCycleProgress.max = 1000
+            pbReportsCurrentCycleProgress.progress =
+                (resumenActual.porcentajeTotalRegistrado * 10.0).toInt().coerceIn(0, 1000)
+            return
+        }
+
+        // Existen reportes históricos en SQLite (Stitch Pantalla 18)
+        spinnerReportWeeks.isEnabled = true
+        cardReportsSpinnerBox.visibility = View.VISIBLE
+        cardReportsLockedWeekBanner.visibility = View.GONE
+        llReportsEmptyStateContainer.visibility = View.GONE
+        llReportsContentContainer.visibility = View.VISIBLE
+
+        val etiquetasSemanas = reportesDisponibles.map { it.formatearRangoSpinner() }
+        val indiceSeleccionado = reportesDisponibles
+            .indexOfFirst { it.id == reporteSeleccionadoId }
+            .takeIf { it >= 0 } ?: 0
+
+        val reporteActivo = reportesDisponibles[indiceSeleccionado]
+        reporteSeleccionadoId = reporteActivo.id
+
+        actualizandoSpinnerReportes = true
+        val spinnerAdapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            etiquetasSemanas
+        ).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        spinnerReportWeeks.adapter = spinnerAdapter
+        spinnerReportWeeks.setSelection(indiceSeleccionado, false)
+        actualizandoSpinnerReportes = false
+
+        renderizarReporteSeleccionado(reporteActivo)
+    }
+
+    /**
+     * Renderiza en la pantalla Reportes los valores históricos almacenados del reporte seleccionado
+     * (sin recalcular desde cero) y consulta los eventos finalizados correspondientes a esa semana.
+     */
+    private fun renderizarReporteSeleccionado(reporteResumen: ReporteSemanal) {
+        val reporte = dbHelper.obtenerReporteSemanalPorId(reporteResumen.id) ?: reporteResumen
+        val rangoTexto = reporte.formatearRangoSpinner()
+
+        val pos = reportesDisponibles.indexOfFirst { it.id == reporte.id }
+        tvReportSelectedWeekMeta.text = if (pos == 0) {
+            "Semana archivada más reciente · ${reporte.totalEventos} eventos"
+        } else {
+            "Reporte histórico #${reportesDisponibles.size - pos} · ${reporte.totalEventos} eventos"
+        }
+
+        tvReportSummaryWeekRange.text = rangoTexto
+        tvReportRegisteredHours.text = reporte.formatearHorasRegistradas()
+        tvReportRegisteredPercent.text = "${reporte.formatearPorcentajeRegistrado()} de la semana"
+        tvReportUnregisteredHours.text = reporte.formatearHorasSinRegistrar()
+        tvReportUnregisteredPercent.text = "${reporte.formatearPorcentajeSinRegistrar()} restante"
+        tvReportMonitoredLabel.text = "● ${reporte.formatearHorasRegistradas()} monitoreadas"
+        pbReportTotalProgress.max = 1000
+        pbReportTotalProgress.progress = reporte.obtenerProgresoRegistradoPorMil()
+
+        // Renderizar filas por categoría desde los detalles guardados en `detalle_reportes_semanales`
+        // más la fila final "Sin registrar" con los valores guardados en `reportes_semanales`
+        llReportCategoryRowsContainer.removeAllViews()
+        reporte.detallesCategorias.forEach { detalle ->
+            inflarFilaCategoriaEnContenedor(
+                llReportCategoryRowsContainer,
+                detalle.aFilaCategoriaSemanal()
+            )
+        }
+
+        val filaSinRegistrarHistorica = FilaCategoriaSemanal(
+            categoriaId = ResumenSemanal.ID_SIN_REGISTRAR,
+            nombreCategoria = ResumenSemanal.NOMBRE_SIN_REGISTRAR,
+            totalSegundos = reporte.segundosSinRegistrar,
+            esSinRegistrar = true,
+            esCategoriaInicial = false
+        )
+        inflarFilaCategoriaEnContenedor(llReportCategoryRowsContainer, filaSinRegistrarHistorica)
+
+        // Consultar y mostrar el historial de eventos finalizados de la semana seleccionada
+        val eventosSemana = dbHelper.listarEventosFinalizadosPorSemana(
+            lunesInicio = reporte.lunesInicioLocalDateTime(),
+            lunesSiguienteExclusivo = reporte.lunesSiguienteExclusivoLocalDateTime()
+        )
+        val cantEventos = eventosSemana.size
+        tvReportEventsCountBadge.text = if (cantEventos == 1) {
+            "1 registro archivado"
+        } else {
+            "$cantEventos registros archivados"
+        }
+        reportWeekEventsAdapter.actualizarDatos(eventosSemana)
     }
 
     private fun navegarATareasPorNombreCategoria(nombreCategoria: String) {
@@ -948,7 +1188,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private enum class SeccionActiva {
-        INICIO, CATEGORIAS, TAREAS, EVENTOS
+        INICIO, CATEGORIAS, TAREAS, EVENTOS, REPORTES
     }
 
     private fun mostrarSeccion(seccion: SeccionActiva) {
@@ -959,6 +1199,7 @@ class MainActivity : AppCompatActivity() {
                 viewCategories.visibility = View.GONE
                 viewTasks.visibility = View.GONE
                 viewEvents.visibility = View.GONE
+                viewReports.visibility = View.GONE
                 fabMain.visibility = View.GONE
             }
             SeccionActiva.CATEGORIAS -> {
@@ -967,6 +1208,7 @@ class MainActivity : AppCompatActivity() {
                 viewCategories.visibility = View.VISIBLE
                 viewTasks.visibility = View.GONE
                 viewEvents.visibility = View.GONE
+                viewReports.visibility = View.GONE
                 fabMain.visibility = View.VISIBLE
                 fabMain.contentDescription = "Crear nueva categoría"
             }
@@ -976,6 +1218,7 @@ class MainActivity : AppCompatActivity() {
                 viewCategories.visibility = View.GONE
                 viewTasks.visibility = View.VISIBLE
                 viewEvents.visibility = View.GONE
+                viewReports.visibility = View.GONE
                 fabMain.visibility = View.VISIBLE
                 fabMain.contentDescription = "Agregar nueva tarea"
             }
@@ -985,6 +1228,16 @@ class MainActivity : AppCompatActivity() {
                 viewCategories.visibility = View.GONE
                 viewTasks.visibility = View.GONE
                 viewEvents.visibility = View.VISIBLE
+                viewReports.visibility = View.GONE
+                fabMain.visibility = View.GONE
+            }
+            SeccionActiva.REPORTES -> {
+                tvTopAppSubtitle.text = getString(R.string.nav_reports)
+                viewHome.visibility = View.GONE
+                viewCategories.visibility = View.GONE
+                viewTasks.visibility = View.GONE
+                viewEvents.visibility = View.GONE
+                viewReports.visibility = View.VISIBLE
                 fabMain.visibility = View.GONE
             }
         }
@@ -993,7 +1246,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Muestra el nombre del estudiante y la versión actual:
-     * "Nombre Apellido · v0.3.0 (3)"
+     * "Nombre Apellido · v1.0.0 (4)"
      */
     private fun actualizarCabeceraEstudianteYVersion() {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -1002,7 +1255,7 @@ class MainActivity : AppCompatActivity() {
             ?: getString(R.string.student_name)
 
         val pkgInfo = packageManager.getPackageInfo(packageName, 0)
-        val versionName = pkgInfo.versionName ?: "0.3.0"
+        val versionName = pkgInfo.versionName ?: "1.0.0"
         val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             pkgInfo.longVersionCode
         } else {
@@ -1048,6 +1301,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun recargarDatosYActualizarUI() {
+        // HU-07: Ejecutar cierre semanal automático antes de mostrar datos o reportes
+        dbHelper.ejecutarCierreSemanalAutomatico()
+
         val categorias = dbHelper.listarCategorias()
         val todasLasTareas = dbHelper.listarTareas(categoriaIdFiltro = null)
         val todosLosEventos = dbHelper.listarEventos(categoriaIdFiltro = null)
@@ -1131,12 +1387,15 @@ class MainActivity : AppCompatActivity() {
             taskAdapter.actualizarDatos(tareasFiltradas)
         }
 
-        // 4. Actualizar Pantallas 10, 11 y 13: Eventos y recuperación de evento activo
+        // 4. Actualizar Pantallas 10, 11, 13, 16 y 17: Eventos y Panel Semanal Actual (Sprint 3)
         sincronizarEstadoEventoActivoYRecientes()
         val textoBusquedaActual = etEventTaskSearch.text?.toString().orEmpty()
         if (textoBusquedaActual.isNotEmpty()) {
             actualizarResultadosBusquedaEventos(textoBusquedaActual)
         }
+
+        // 5. Actualizar Pantallas 18 y 19: Reportes Semanales (Sprint 4)
+        actualizarPantallaReportes()
     }
 
     private fun renderizarChipsFiltroTareas(categorias: List<Categoria>, totalTareas: Int) {

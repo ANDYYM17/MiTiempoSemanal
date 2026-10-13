@@ -5,7 +5,9 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.senati.mitiemposemanal.ayovera.model.Categoria
+import com.senati.mitiemposemanal.ayovera.model.DetalleReporteCategoria
 import com.senati.mitiemposemanal.ayovera.model.Evento
+import com.senati.mitiemposemanal.ayovera.model.ReporteSemanal
 import com.senati.mitiemposemanal.ayovera.model.ResumenSemanal
 import com.senati.mitiemposemanal.ayovera.model.Tarea
 import java.time.LocalDate
@@ -32,21 +34,29 @@ sealed class ResultadoEvento {
 }
 
 /**
- * Gestor de base de datos SQLite mediante SQLiteOpenHelper para MiTiempoSemanal (Sprints 1, 2 y 3).
+ * Gestor de base de datos SQLite mediante SQLiteOpenHelper para MiTiempoSemanal (Sprints 1, 2, 3 y 4).
  *
  * Tablas:
  * - `categorias` (id PK, nombre NOT NULL UNIQUE COLLATE NOCASE)
  * - `tareas` (id PK, nombre NOT NULL UNIQUE COLLATE NOCASE, categoria_id FK -> categorias.id ON DELETE RESTRICT)
  * - `eventos` (id PK, tarea_id FK -> tareas.id ON DELETE RESTRICT, fecha_inicio NOT NULL, fecha_fin NULL,
- *              duracion_segundos NULL, estado NOT NULL) + índice único parcial para garantizar un único evento activo
+ *              duracion_segundos NULL, estado NOT NULL, tarea_nombre_snapshot TEXT, categoria_nombre_snapshot TEXT)
+ *              + índice único parcial para garantizar un único evento activo
  *              + índice por fecha_inicio y estado para consultas semanales agrupadas (Sprint 3).
+ * - `reportes_semanales` (id PK, fecha_inicio_semana, fecha_fin_semana, segundos_registrados,
+ *                         minutos_registrados, porcentaje_registrado, segundos_sin_registrar,
+ *                         minutos_sin_registrar, porcentaje_sin_registrar, total_eventos, fecha_cierre,
+ *                         UNIQUE(fecha_inicio_semana, fecha_fin_semana))
+ * - `detalle_reportes_semanales` (id PK, reporte_id FK -> reportes_semanales.id ON DELETE CASCADE,
+ *                                 categoria_id, categoria_nombre, segundos_totales, minutos_totales,
+ *                                 porcentaje, UNIQUE(reporte_id, categoria_id))
  */
 class AdminSQLiteOpenHelper(context: Context) :
     SQLiteOpenHelper(context.applicationContext, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         const val DATABASE_NAME = "mi_tiempo_semanal.db"
-        const val DATABASE_VERSION = 3
+        const val DATABASE_VERSION = 4
 
         const val TABLE_CATEGORIAS = "categorias"
         const val COL_CAT_ID = "id"
@@ -64,8 +74,32 @@ class AdminSQLiteOpenHelper(context: Context) :
         const val COL_EVENT_FECHA_FIN = "fecha_fin"
         const val COL_EVENT_DURACION_SEGUNDOS = "duracion_segundos"
         const val COL_EVENT_ESTADO = "estado"
+        const val COL_EVENT_TAREA_SNAPSHOT = "tarea_nombre_snapshot"
+        const val COL_EVENT_CAT_SNAPSHOT = "categoria_nombre_snapshot"
         const val INDEX_UNICO_EVENTO_ACTIVO = "idx_unico_evento_activo"
         const val INDEX_EVENTOS_SEMANA = "idx_eventos_semana"
+
+        const val TABLE_REPORTES_SEMANALES = "reportes_semanales"
+        const val COL_REP_ID = "id"
+        const val COL_REP_FECHA_INICIO = "fecha_inicio_semana"
+        const val COL_REP_FECHA_FIN = "fecha_fin_semana"
+        const val COL_REP_SEG_REGISTRADOS = "segundos_registrados"
+        const val COL_REP_MIN_REGISTRADOS = "minutos_registrados"
+        const val COL_REP_PORC_REGISTRADO = "porcentaje_registrado"
+        const val COL_REP_SEG_SIN_REGISTRAR = "segundos_sin_registrar"
+        const val COL_REP_MIN_SIN_REGISTRAR = "minutos_sin_registrar"
+        const val COL_REP_PORC_SIN_REGISTRAR = "porcentaje_sin_registrar"
+        const val COL_REP_TOTAL_EVENTOS = "total_eventos"
+        const val COL_REP_FECHA_CIERRE = "fecha_cierre"
+
+        const val TABLE_DETALLE_REPORTES = "detalle_reportes_semanales"
+        const val COL_DET_ID = "id"
+        const val COL_DET_REPORTE_ID = "reporte_id"
+        const val COL_DET_CATEGORIA_ID = "categoria_id"
+        const val COL_DET_CATEGORIA_NOMBRE = "categoria_nombre"
+        const val COL_DET_SEGUNDOS_TOTALES = "segundos_totales"
+        const val COL_DET_MINUTOS_TOTALES = "minutos_totales"
+        const val COL_DET_PORCENTAJE = "porcentaje"
     }
 
     override fun onConfigure(db: SQLiteDatabase) {
@@ -97,14 +131,17 @@ class AdminSQLiteOpenHelper(context: Context) :
 
         crearTablaEventosEIndices(db)
         crearIndiceConsultasSemanales(db)
+        asegurarColumnasSnapshotEventos(db)
+        crearTablasReportesSemanales(db)
         insertarCategoriasIniciales(db)
     }
 
     /**
-     * Migración incremental preservando todos los datos de los Sprints 1 y 2:
+     * Migración incremental preservando todos los datos de los Sprints 1, 2 y 3:
      * - v1 -> v2: Crea la tabla `eventos` y su índice único de evento activo sin eliminar `categorias` ni `tareas`.
-     * - v2 -> v3: Crea el índice `idx_eventos_semana` para optimizar el cómputo semanal con SUM y GROUP BY,
-     *             conservando todas las categorías, tareas, eventos finalizados y eventos en curso.
+     * - v2 -> v3: Crea el índice `idx_eventos_semana` para optimizar el cómputo semanal con SUM y GROUP BY.
+     * - v3 -> v4: Añade columnas de instantánea histórica en `eventos` y crea las tablas `reportes_semanales`
+     *             y `detalle_reportes_semanales` con restricciones UNIQUE sin perder categorías, tareas ni eventos.
      */
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
@@ -114,6 +151,13 @@ class AdminSQLiteOpenHelper(context: Context) :
         if (oldVersion < 3) {
             crearTablaEventosEIndices(db)
             crearIndiceConsultasSemanales(db)
+            insertarCategoriasIniciales(db)
+        }
+        if (oldVersion < 4) {
+            crearTablaEventosEIndices(db)
+            crearIndiceConsultasSemanales(db)
+            asegurarColumnasSnapshotEventos(db)
+            crearTablasReportesSemanales(db)
             insertarCategoriasIniciales(db)
         }
     }
@@ -128,6 +172,8 @@ class AdminSQLiteOpenHelper(context: Context) :
                 $COL_EVENT_FECHA_FIN TEXT,
                 $COL_EVENT_DURACION_SEGUNDOS INTEGER,
                 $COL_EVENT_ESTADO TEXT NOT NULL DEFAULT '${Evento.ESTADO_EN_CURSO}',
+                $COL_EVENT_TAREA_SNAPSHOT TEXT,
+                $COL_EVENT_CAT_SNAPSHOT TEXT,
                 FOREIGN KEY ($COL_EVENT_TAREA_ID) REFERENCES $TABLE_TAREAS($COL_TASK_ID)
                     ON DELETE RESTRICT ON UPDATE CASCADE
             )
@@ -149,6 +195,71 @@ class AdminSQLiteOpenHelper(context: Context) :
             """
             CREATE INDEX IF NOT EXISTS $INDEX_EVENTOS_SEMANA
             ON $TABLE_EVENTOS($COL_EVENT_FECHA_INICIO, $COL_EVENT_ESTADO)
+            """.trimIndent()
+        )
+    }
+
+    /**
+     * En migraciones desde v2 o v3, añade mediante ALTER TABLE las columnas opcionales de instantánea
+     * histórica en `eventos` si todavía no existen.
+     */
+    private fun asegurarColumnasSnapshotEventos(db: SQLiteDatabase) {
+        val columnasExistentes = mutableSetOf<String>()
+        val cursor = db.rawQuery("PRAGMA table_info($TABLE_EVENTOS)", null)
+        cursor.use {
+            val nameIdx = it.getColumnIndex("name")
+            while (it.moveToNext()) {
+                if (nameIdx >= 0) {
+                    columnasExistentes.add(it.getString(nameIdx))
+                }
+            }
+        }
+        if (COL_EVENT_TAREA_SNAPSHOT !in columnasExistentes) {
+            db.execSQL("ALTER TABLE $TABLE_EVENTOS ADD COLUMN $COL_EVENT_TAREA_SNAPSHOT TEXT")
+        }
+        if (COL_EVENT_CAT_SNAPSHOT !in columnasExistentes) {
+            db.execSQL("ALTER TABLE $TABLE_EVENTOS ADD COLUMN $COL_EVENT_CAT_SNAPSHOT TEXT")
+        }
+    }
+
+    /**
+     * Sección 6: Crea las tablas `reportes_semanales` y `detalle_reportes_semanales` con restricciones
+     * UNIQUE a nivel de SQLite para garantizar idempotencia y ausencia de duplicados.
+     */
+    private fun crearTablasReportesSemanales(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS $TABLE_REPORTES_SEMANALES (
+                $COL_REP_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COL_REP_FECHA_INICIO TEXT NOT NULL,
+                $COL_REP_FECHA_FIN TEXT NOT NULL,
+                $COL_REP_SEG_REGISTRADOS INTEGER NOT NULL DEFAULT 0,
+                $COL_REP_MIN_REGISTRADOS REAL NOT NULL DEFAULT 0.0,
+                $COL_REP_PORC_REGISTRADO REAL NOT NULL DEFAULT 0.0,
+                $COL_REP_SEG_SIN_REGISTRAR INTEGER NOT NULL DEFAULT ${ResumenSemanal.SEGUNDOS_SEMANA},
+                $COL_REP_MIN_SIN_REGISTRAR REAL NOT NULL DEFAULT ${ResumenSemanal.MINUTOS_SEMANA},
+                $COL_REP_PORC_SIN_REGISTRAR REAL NOT NULL DEFAULT 100.0,
+                $COL_REP_TOTAL_EVENTOS INTEGER NOT NULL DEFAULT 0,
+                $COL_REP_FECHA_CIERRE TEXT NOT NULL,
+                UNIQUE($COL_REP_FECHA_INICIO, $COL_REP_FECHA_FIN)
+            )
+            """.trimIndent()
+        )
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS $TABLE_DETALLE_REPORTES (
+                $COL_DET_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COL_DET_REPORTE_ID INTEGER NOT NULL,
+                $COL_DET_CATEGORIA_ID INTEGER NOT NULL,
+                $COL_DET_CATEGORIA_NOMBRE TEXT NOT NULL,
+                $COL_DET_SEGUNDOS_TOTALES INTEGER NOT NULL DEFAULT 0,
+                $COL_DET_MINUTOS_TOTALES REAL NOT NULL DEFAULT 0.0,
+                $COL_DET_PORCENTAJE REAL NOT NULL DEFAULT 0.0,
+                FOREIGN KEY ($COL_DET_REPORTE_ID) REFERENCES $TABLE_REPORTES_SEMANALES($COL_REP_ID)
+                    ON DELETE CASCADE ON UPDATE CASCADE,
+                UNIQUE($COL_DET_REPORTE_ID, $COL_DET_CATEGORIA_ID)
+            )
             """.trimIndent()
         )
     }
@@ -945,6 +1056,421 @@ class AdminSQLiteOpenHelper(context: Context) :
             categorias = categorias,
             segundosPorCategoriaId = segundosPorCategoria,
             fechaReferencia = fechaReferencia
+        )
+    }
+
+    // =========================================================================
+    // SPRINT 4: CIERRE SEMANAL AUTOMÁTICO (HU-07) Y CONSULTAS DE REPORTES (HU-08)
+    // =========================================================================
+
+    /**
+     * HU-07: Cierre semanal automático, cronológico, transaccional e idempotente.
+     *
+     * Reglas de negocio cumplidas (Secciones 4, 6 y 7):
+     * 1. Determina las semanas terminadas (cuyo domingo ya finalizó, es decir, `lunesInicio < lunesSemanaActual`)
+     *    que contienen al menos un evento finalizado (`fecha_fin IS NOT NULL AND estado = 'FINALIZADO'`).
+     * 2. Identifica qué semanas con eventos finalizados todavía no tienen reporte en `reportes_semanales`.
+     * 3. Procesa las semanas pendientes en estricto orden cronológico (de la más antigua a la más reciente).
+     * 4. No genera reportes para la semana actual (en curso), ni para semanas futuras, ni para semanas
+     *    anteriores vacías sin eventos finalizados.
+     * 5. Guarda cada reporte y su detalle por categoría dentro de una transacción atómica SQLite
+     *    con restricciones `UNIQUE(fecha_inicio_semana, fecha_fin_semana)` y `UNIQUE(reporte_id, categoria_id)`.
+     * 6. Congela instantáneas históricas (`categoria_nombre` en `detalle_reportes_semanales` y
+     *    `tarea_nombre_snapshot`/`categoria_nombre_snapshot` en `eventos`) para preservar la fidelidad
+     *    histórica aunque una tarea o categoría cambie de nombre después del cierre.
+     * 7. Nota de diseño (Sección 7): Como la tabla `categorias` del Sprint 1 no almacena marca temporal
+     *    de creación, el detalle del reporte incluye todas las categorías existentes en SQLite en el
+     *    momento del cierre (mostrando 0 min y 0.0 % para las que no tuvieron eventos esa semana).
+     * 8. Conserva intactos todos los eventos originales en la tabla `eventos`.
+     *
+     * @param fechaActual Fecha actual de referencia (por defecto `LocalDate.now()`).
+     * @return Lista de nuevos reportes generados en esta ejecución (vacía si ya estaban todos cerrados).
+     */
+    fun ejecutarCierreSemanalAutomatico(
+        fechaActual: LocalDate = LocalDate.now()
+    ): List<ReporteSemanal> {
+        val lunesSemanaActual = ResumenSemanal.obtenerLunesInicioSemana(fechaActual)
+        val lunesSemanaActualIso = Evento.formatearIso(lunesSemanaActual)
+
+        val db = writableDatabase
+
+        // 1. Obtener las fechas de inicio de todos los eventos finalizados pertenecientes a semanas ya terminadas
+        val lunesConEventosPendientes = sortedSetOf<LocalDate>()
+        val cursorFechas = db.rawQuery(
+            """
+            SELECT $COL_EVENT_FECHA_INICIO
+            FROM $TABLE_EVENTOS
+            WHERE $COL_EVENT_FECHA_FIN IS NOT NULL
+              AND $COL_EVENT_ESTADO = '${Evento.ESTADO_FINALIZADO}'
+              AND $COL_EVENT_FECHA_INICIO < ?
+            ORDER BY $COL_EVENT_FECHA_INICIO ASC
+            """.trimIndent(),
+            arrayOf(lunesSemanaActualIso)
+        )
+        cursorFechas.use {
+            while (it.moveToNext()) {
+                val fechaInicioStr = it.getString(0) ?: continue
+                val fechaInicioDt = Evento.parsearIso(fechaInicioStr)
+                val lunesEvento = ResumenSemanal.obtenerLunesInicioSemana(fechaInicioDt.toLocalDate()).toLocalDate()
+                if (lunesEvento.isBefore(lunesSemanaActual.toLocalDate())) {
+                    lunesConEventosPendientes.add(lunesEvento)
+                }
+            }
+        }
+
+        if (lunesConEventosPendientes.isEmpty()) {
+            return emptyList()
+        }
+
+        val categoriasActuales = listarCategorias()
+        val nuevosReportesGenerados = mutableListOf<ReporteSemanal>()
+
+        // 2. Generar en orden cronológico únicamente las semanas que aún no tengan reporte guardado
+        for (lunesSemana in lunesConEventosPendientes) {
+            val domingoSemana = ResumenSemanal.obtenerDomingoFinSemana(lunesSemana)
+            val lunesIsoFecha = ReporteSemanal.formatearFechaIso(lunesSemana)
+            val domingoIsoFecha = ReporteSemanal.formatearFechaIso(domingoSemana)
+
+            if (existeReporteParaSemana(db, lunesIsoFecha, domingoIsoFecha)) {
+                continue
+            }
+
+            val lunesInicioDt = lunesSemana.atStartOfDay()
+            val lunesSiguienteDt = lunesSemana.plusDays(7).atStartOfDay()
+            val segundosPorCategoria = consultarSegundosSemanalesPorCategoriaSql(
+                lunesInicio = lunesInicioDt,
+                lunesSiguienteExclusivo = lunesSiguienteDt
+            )
+            val resumenSemana = ResumenSemanal.construir(
+                categorias = categoriasActuales,
+                segundosPorCategoriaId = segundosPorCategoria,
+                fechaReferencia = lunesSemana
+            )
+
+            // Solo cerramos semanas que efectivamente tengan eventos finalizados
+            val totalEventosSemana = contarEventosFinalizadosEnRango(
+                db = db,
+                inicioIso = Evento.formatearIso(lunesInicioDt),
+                finExclusivoIso = Evento.formatearIso(lunesSiguienteDt)
+            )
+            if (totalEventosSemana <= 0) {
+                continue
+            }
+
+            var reporteCreadoId = -1L
+            db.beginTransaction()
+            try {
+                if (!existeReporteParaSemana(db, lunesIsoFecha, domingoIsoFecha)) {
+                    // Congelar instantáneas de nombres de tarea y categoría en los eventos de la semana cerrada
+                    congelarSnapshotsEventosSemana(
+                        db = db,
+                        inicioIso = Evento.formatearIso(lunesInicioDt),
+                        finExclusivoIso = Evento.formatearIso(lunesSiguienteDt)
+                    )
+
+                    val fechaCierreIso = Evento.formatearIso(LocalDateTime.now())
+                    val valoresReporte = ContentValues().apply {
+                        put(COL_REP_FECHA_INICIO, lunesIsoFecha)
+                        put(COL_REP_FECHA_FIN, domingoIsoFecha)
+                        put(COL_REP_SEG_REGISTRADOS, resumenSemana.totalSegundosRegistrados)
+                        put(COL_REP_MIN_REGISTRADOS, resumenSemana.totalMinutosRegistrados)
+                        put(COL_REP_PORC_REGISTRADO, resumenSemana.porcentajeTotalRegistrado)
+                        put(COL_REP_SEG_SIN_REGISTRAR, resumenSemana.filaSinRegistrar.totalSegundos)
+                        put(COL_REP_MIN_SIN_REGISTRAR, resumenSemana.filaSinRegistrar.minutosAcumulados)
+                        put(COL_REP_PORC_SIN_REGISTRAR, resumenSemana.filaSinRegistrar.porcentajeSemanal)
+                        put(COL_REP_TOTAL_EVENTOS, totalEventosSemana)
+                        put(COL_REP_FECHA_CIERRE, fechaCierreIso)
+                    }
+
+                    reporteCreadoId = db.insertWithOnConflict(
+                        TABLE_REPORTES_SEMANALES,
+                        null,
+                        valoresReporte,
+                        SQLiteDatabase.CONFLICT_ABORT
+                    )
+
+                    if (reporteCreadoId != -1L) {
+                        for (filaCat in resumenSemana.filasCategorias) {
+                            val valoresDetalle = ContentValues().apply {
+                                put(COL_DET_REPORTE_ID, reporteCreadoId)
+                                put(COL_DET_CATEGORIA_ID, filaCat.categoriaId)
+                                put(COL_DET_CATEGORIA_NOMBRE, filaCat.nombreCategoria)
+                                put(COL_DET_SEGUNDOS_TOTALES, filaCat.totalSegundos)
+                                put(COL_DET_MINUTOS_TOTALES, filaCat.minutosAcumulados)
+                                put(COL_DET_PORCENTAJE, filaCat.porcentajeSemanal)
+                            }
+                            db.insertWithOnConflict(
+                                TABLE_DETALLE_REPORTES,
+                                null,
+                                valoresDetalle,
+                                SQLiteDatabase.CONFLICT_ABORT
+                            )
+                        }
+                    }
+                }
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+
+            if (reporteCreadoId != -1L) {
+                obtenerReporteSemanalPorId(reporteCreadoId)?.let { nuevosReportesGenerados.add(it) }
+            }
+        }
+
+        return nuevosReportesGenerados
+    }
+
+    private fun existeReporteParaSemana(
+        db: SQLiteDatabase,
+        lunesIsoFecha: String,
+        domingoIsoFecha: String
+    ): Boolean {
+        val cursor = db.rawQuery(
+            """
+            SELECT 1 FROM $TABLE_REPORTES_SEMANALES
+            WHERE $COL_REP_FECHA_INICIO = ? AND $COL_REP_FECHA_FIN = ?
+            LIMIT 1
+            """.trimIndent(),
+            arrayOf(lunesIsoFecha, domingoIsoFecha)
+        )
+        cursor.use {
+            return it.moveToFirst()
+        }
+    }
+
+    private fun contarEventosFinalizadosEnRango(
+        db: SQLiteDatabase,
+        inicioIso: String,
+        finExclusivoIso: String
+    ): Int {
+        val cursor = db.rawQuery(
+            """
+            SELECT COUNT(*)
+            FROM $TABLE_EVENTOS
+            WHERE $COL_EVENT_FECHA_FIN IS NOT NULL
+              AND $COL_EVENT_ESTADO = '${Evento.ESTADO_FINALIZADO}'
+              AND $COL_EVENT_FECHA_INICIO >= ?
+              AND $COL_EVENT_FECHA_INICIO < ?
+            """.trimIndent(),
+            arrayOf(inicioIso, finExclusivoIso)
+        )
+        cursor.use {
+            if (it.moveToFirst()) {
+                return it.getInt(0)
+            }
+        }
+        return 0
+    }
+
+    /**
+     * Guarda en `eventos` las instantáneas del nombre de la tarea y de la categoría vigentes al momento
+     * del cierre semanal, asegurando que ediciones posteriores no alteren el historial del reporte cerrado.
+     */
+    private fun congelarSnapshotsEventosSemana(
+        db: SQLiteDatabase,
+        inicioIso: String,
+        finExclusivoIso: String
+    ) {
+        db.execSQL(
+            """
+            UPDATE $TABLE_EVENTOS
+            SET $COL_EVENT_TAREA_SNAPSHOT = COALESCE(
+                    $COL_EVENT_TAREA_SNAPSHOT,
+                    (SELECT t.$COL_TASK_NOMBRE FROM $TABLE_TAREAS t WHERE t.$COL_TASK_ID = $TABLE_EVENTOS.$COL_EVENT_TAREA_ID)
+                ),
+                $COL_EVENT_CAT_SNAPSHOT = COALESCE(
+                    $COL_EVENT_CAT_SNAPSHOT,
+                    (SELECT c.$COL_CAT_NOMBRE
+                     FROM $TABLE_TAREAS t
+                     JOIN $TABLE_CATEGORIAS c ON c.$COL_CAT_ID = t.$COL_TASK_CATEGORIA_ID
+                     WHERE t.$COL_TASK_ID = $TABLE_EVENTOS.$COL_EVENT_TAREA_ID)
+                )
+            WHERE $COL_EVENT_FECHA_FIN IS NOT NULL
+              AND $COL_EVENT_ESTADO = '${Evento.ESTADO_FINALIZADO}'
+              AND $COL_EVENT_FECHA_INICIO >= ?
+              AND $COL_EVENT_FECHA_INICIO < ?
+            """.trimIndent(),
+            arrayOf(inicioIso, finExclusivoIso)
+        )
+    }
+
+    /**
+     * HU-08 y Sección 8: Consulta todos los reportes semanales guardados en SQLite,
+     * ordenados desde la semana más reciente hasta la más antigua (`ORDER BY fecha_inicio_semana DESC`).
+     */
+    fun listarReportesSemanales(): List<ReporteSemanal> {
+        val db = readableDatabase
+        val reportesBase = mutableListOf<ReporteSemanal>()
+
+        val cursor = db.rawQuery(
+            """
+            SELECT $COL_REP_ID,
+                   $COL_REP_FECHA_INICIO,
+                   $COL_REP_FECHA_FIN,
+                   $COL_REP_SEG_REGISTRADOS,
+                   $COL_REP_MIN_REGISTRADOS,
+                   $COL_REP_PORC_REGISTRADO,
+                   $COL_REP_SEG_SIN_REGISTRAR,
+                   $COL_REP_MIN_SIN_REGISTRAR,
+                   $COL_REP_PORC_SIN_REGISTRAR,
+                   $COL_REP_TOTAL_EVENTOS,
+                   $COL_REP_FECHA_CIERRE
+            FROM $TABLE_REPORTES_SEMANALES
+            ORDER BY $COL_REP_FECHA_INICIO DESC, $COL_REP_ID DESC
+            """.trimIndent(),
+            null
+        )
+
+        cursor.use {
+            while (it.moveToNext()) {
+                reportesBase.add(mapearCursorAReporteBase(it))
+            }
+        }
+
+        return reportesBase.map { rep ->
+            rep.copy(detallesCategorias = listarDetallesDeReporte(rep.id))
+        }
+    }
+
+    /**
+     * Obtiene un reporte semanal específico junto con el detalle histórico de sus categorías.
+     */
+    fun obtenerReporteSemanalPorId(reporteId: Long): ReporteSemanal? {
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            """
+            SELECT $COL_REP_ID,
+                   $COL_REP_FECHA_INICIO,
+                   $COL_REP_FECHA_FIN,
+                   $COL_REP_SEG_REGISTRADOS,
+                   $COL_REP_MIN_REGISTRADOS,
+                   $COL_REP_PORC_REGISTRADO,
+                   $COL_REP_SEG_SIN_REGISTRAR,
+                   $COL_REP_MIN_SIN_REGISTRAR,
+                   $COL_REP_PORC_SIN_REGISTRAR,
+                   $COL_REP_TOTAL_EVENTOS,
+                   $COL_REP_FECHA_CIERRE
+            FROM $TABLE_REPORTES_SEMANALES
+            WHERE $COL_REP_ID = ?
+            LIMIT 1
+            """.trimIndent(),
+            arrayOf(reporteId.toString())
+        )
+
+        val reporteBase = cursor.use {
+            if (it.moveToFirst()) mapearCursorAReporteBase(it) else null
+        } ?: return null
+
+        return reporteBase.copy(detallesCategorias = listarDetallesDeReporte(reporteBase.id))
+    }
+
+    /**
+     * Consulta los detalles por categoría almacenados en `detalle_reportes_semanales` para un reporte.
+     */
+    fun listarDetallesDeReporte(reporteId: Long): List<DetalleReporteCategoria> {
+        val db = readableDatabase
+        val lista = mutableListOf<DetalleReporteCategoria>()
+        val cursor = db.rawQuery(
+            """
+            SELECT $COL_DET_ID,
+                   $COL_DET_REPORTE_ID,
+                   $COL_DET_CATEGORIA_ID,
+                   $COL_DET_CATEGORIA_NOMBRE,
+                   $COL_DET_SEGUNDOS_TOTALES,
+                   $COL_DET_MINUTOS_TOTALES,
+                   $COL_DET_PORCENTAJE
+            FROM $TABLE_DETALLE_REPORTES
+            WHERE $COL_DET_REPORTE_ID = ?
+            ORDER BY $COL_DET_CATEGORIA_ID ASC, $COL_DET_ID ASC
+            """.trimIndent(),
+            arrayOf(reporteId.toString())
+        )
+        cursor.use {
+            while (it.moveToNext()) {
+                lista.add(
+                    DetalleReporteCategoria(
+                        id = it.getLong(0),
+                        reporteId = it.getLong(1),
+                        categoriaId = it.getLong(2),
+                        categoriaNombre = it.getString(3),
+                        segundosTotales = it.getLong(4),
+                        minutosTotales = it.getDouble(5),
+                        porcentaje = it.getDouble(6)
+                    )
+                )
+            }
+        }
+        return lista
+    }
+
+    /**
+     * Sección 9: Lista los eventos finalizados pertenecientes a la semana seleccionada
+     * (`fecha_inicio >= lunesInicio` y `fecha_inicio < lunesSiguienteExclusivo`), incluyendo
+     * aquellos que comenzaron el domingo y finalizaron el lunes siguiente.
+     *
+     * Utiliza las instantáneas históricas (`tarea_nombre_snapshot` y `categoria_nombre_snapshot`)
+     * cuando estén disponibles para mantener la coherencia histórica si una tarea o categoría
+     * cambió de nombre después del cierre semanal.
+     */
+    fun listarEventosFinalizadosPorSemana(
+        lunesInicio: LocalDateTime,
+        lunesSiguienteExclusivo: LocalDateTime
+    ): List<Evento> {
+        val inicioIso = Evento.formatearIso(lunesInicio)
+        val finExclusivoIso = Evento.formatearIso(lunesSiguienteExclusivo)
+
+        val lista = mutableListOf<Evento>()
+        val db = readableDatabase
+        val query = """
+            SELECT e.$COL_EVENT_ID,
+                   e.$COL_EVENT_TAREA_ID,
+                   COALESCE(e.$COL_EVENT_TAREA_SNAPSHOT, t.$COL_TASK_NOMBRE) AS tarea_nombre_hist,
+                   t.$COL_TASK_CATEGORIA_ID,
+                   COALESCE(e.$COL_EVENT_CAT_SNAPSHOT, c.$COL_CAT_NOMBRE) AS categoria_nombre_hist,
+                   e.$COL_EVENT_FECHA_INICIO,
+                   e.$COL_EVENT_FECHA_FIN,
+                   e.$COL_EVENT_DURACION_SEGUNDOS,
+                   e.$COL_EVENT_ESTADO
+            FROM $TABLE_EVENTOS e
+            INNER JOIN $TABLE_TAREAS t ON e.$COL_EVENT_TAREA_ID = t.$COL_TASK_ID
+            INNER JOIN $TABLE_CATEGORIAS c ON t.$COL_TASK_CATEGORIA_ID = c.$COL_CAT_ID
+            WHERE e.$COL_EVENT_FECHA_FIN IS NOT NULL
+              AND e.$COL_EVENT_ESTADO = '${Evento.ESTADO_FINALIZADO}'
+              AND e.$COL_EVENT_FECHA_INICIO >= ?
+              AND e.$COL_EVENT_FECHA_INICIO < ?
+            ORDER BY e.$COL_EVENT_FECHA_INICIO DESC, e.$COL_EVENT_ID DESC
+        """.trimIndent()
+
+        val cursor = db.rawQuery(query, arrayOf(inicioIso, finExclusivoIso))
+        cursor.use {
+            while (it.moveToNext()) {
+                lista.add(mapearCursorAEvento(it))
+            }
+        }
+        return lista
+    }
+
+    fun listarEventosFinalizadosPorSemana(reporte: ReporteSemanal): List<Evento> {
+        return listarEventosFinalizadosPorSemana(
+            lunesInicio = reporte.lunesInicioLocalDateTime(),
+            lunesSiguienteExclusivo = reporte.lunesSiguienteExclusivoLocalDateTime()
+        )
+    }
+
+    private fun mapearCursorAReporteBase(cursor: android.database.Cursor): ReporteSemanal {
+        return ReporteSemanal(
+            id = cursor.getLong(0),
+            fechaInicioSemanaIso = cursor.getString(1),
+            fechaFinSemanaIso = cursor.getString(2),
+            segundosRegistrados = cursor.getLong(3),
+            minutosRegistrados = cursor.getDouble(4),
+            porcentajeRegistrado = cursor.getDouble(5),
+            segundosSinRegistrar = cursor.getLong(6),
+            minutosSinRegistrar = cursor.getDouble(7),
+            porcentajeSinRegistrar = cursor.getDouble(8),
+            totalEventos = cursor.getInt(9),
+            fechaCierreIso = cursor.getString(10)
         )
     }
 

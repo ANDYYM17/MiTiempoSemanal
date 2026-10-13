@@ -2422,6 +2422,790 @@
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
+
+        <!-- ==================================================================== -->
+        <!-- PANTALLAS 18 Y 19: REPORTES SEMANALES Y ESTADO VACÍO (SPRINT 4)      -->
+        <!-- ==================================================================== -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/viewReports"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="96dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- 1. Cabecera Superior de Reportes (Stitch Pantallas 18 y 19) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_pill"
+                        android:backgroundTint="@color/secondary_container"
+                        android:paddingStart="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="4dp"
+                        android:text="● Auto-cierre semanal"
+                        android:textColor="@color/on_secondary_container"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sprint 4 · v1.0.0"
+                        android:textColor="@color/on_surface_variant"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvReportsTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/reports_header_title"
+                    android:textColor="@color/primary"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvReportsSubtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/reports_header_subtitle"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="14sp" />
+
+                <!-- ================================================================ -->
+                <!-- CONTENEDOR DE SELECCIÓN DE SEMANA (SPINNER) (Stitch 18 / 19)     -->
+                <!-- ================================================================ -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/reports_spinner_label"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardReportsSpinnerBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    app:cardBackgroundColor="@color/surface_container_lowest"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="1dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="12dp">
+
+                        <FrameLayout
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_rounded_12"
+                            android:backgroundTint="@color/surface_container">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_calendar"
+                                app:tint="@color/primary_container" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <Spinner
+                                android:id="@+id/spinnerReportWeeks"
+                                android:layout_width="match_parent"
+                                android:layout_height="36dp"
+                                android:spinnerMode="dropdown" />
+
+                            <TextView
+                                android:id="@+id/tvReportSelectedWeekMeta"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="Semana anterior · Histórico ordenado"
+                                android:textColor="@color/secondary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Banner de Selector Bloqueado cuando no hay reportes (Stitch Pantalla 19) -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardReportsLockedWeekBanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/surface_container_low"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="12dp">
+
+                        <FrameLayout
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_rounded_12"
+                            android:backgroundTint="@color/surface_container">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_calendar"
+                                app:tint="@color/outline" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="ARCHIVO SEMANAL"
+                                android:textColor="@color/on_surface_variant"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:text="Semana actual en curso (Ciclo activo)"
+                                android:textColor="@color/on_surface"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_pill"
+                            android:backgroundTint="@color/surface_container_highest"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="8dp"
+                            android:paddingTop="4dp"
+                            android:paddingEnd="8dp"
+                            android:paddingBottom="4dp">
+
+                            <ImageView
+                                android:layout_width="13dp"
+                                android:layout_height="13dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_lock"
+                                app:tint="@color/on_surface_variant" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="En curso"
+                                android:textColor="@color/on_surface_variant"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ================================================================ -->
+                <!-- ESTADO VACÍO CUANDO AÚN NO HAY REPORTES (Stitch Pantalla 19)     -->
+                <!-- ================================================================ -->
+                <LinearLayout
+                    android:id="@+id/llReportsEmptyStateContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardReportsEmptyState"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@color/surface_container_lowest"
+                        app:cardCornerRadius="18dp"
+                        app:cardElevation="1dp"
+                        app:strokeColor="@color/outline_variant"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:padding="24dp">
+
+                            <FrameLayout
+                                android:layout_width="88dp"
+                                android:layout_height="88dp">
+
+                                <FrameLayout
+                                    android:layout_width="84dp"
+                                    android:layout_height="84dp"
+                                    android:layout_gravity="center"
+                                    android:background="@drawable/bg_circle"
+                                    android:backgroundTint="#4DD6E3FF">
+
+                                    <FrameLayout
+                                        android:layout_width="58dp"
+                                        android:layout_height="58dp"
+                                        android:layout_gravity="center"
+                                        android:background="@drawable/bg_circle"
+                                        android:backgroundTint="@color/primary_container">
+
+                                        <ImageView
+                                            android:layout_width="28dp"
+                                            android:layout_height="28dp"
+                                            android:layout_gravity="center"
+                                            android:contentDescription="@null"
+                                            android:src="@drawable/ic_bar_chart"
+                                            app:tint="@color/tertiary_fixed" />
+                                    </FrameLayout>
+                                </FrameLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="bottom|center_horizontal"
+                                    android:background="@drawable/bg_pill"
+                                    android:backgroundTint="@color/secondary"
+                                    android:paddingStart="8dp"
+                                    android:paddingTop="2dp"
+                                    android:paddingEnd="8dp"
+                                    android:paddingBottom="2dp"
+                                    android:text="168 h"
+                                    android:textColor="@color/on_secondary"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:id="@+id/tvReportsEmptyTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="14dp"
+                                android:gravity="center"
+                                android:text="@string/reports_empty_title"
+                                android:textColor="@color/primary"
+                                android:textSize="21sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvReportsEmptyDesc"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:gravity="center"
+                                android:lineSpacingExtra="2dp"
+                                android:text="@string/reports_empty_desc"
+                                android:textColor="@color/on_surface_variant"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:id="@+id/tvReportsEmptyHint"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:gravity="center"
+                                android:text="@string/reports_empty_hint"
+                                android:textColor="@color/outline"
+                                android:textSize="12sp" />
+
+                            <!-- Mini tarjeta de progreso del ciclo semanal actual (Stitch Pantalla 19) -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:background="@drawable/bg_rounded_12"
+                                android:backgroundTint="@color/surface_container"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="Ciclo semanal actual en curso"
+                                        android:textColor="@color/on_surface_variant"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvReportsCurrentCycleSummary"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="0 h 00 min / 168 h"
+                                        android:textColor="@color/primary"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <com.google.android.material.progressindicator.LinearProgressIndicator
+                                    android:id="@+id/pbReportsCurrentCycleProgress"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="6dp"
+                                    android:max="1000"
+                                    android:progress="0"
+                                    app:indicatorColor="@color/secondary"
+                                    app:trackColor="@color/surface_container_highest"
+                                    app:trackCornerRadius="4dp"
+                                    app:trackThickness="7dp" />
+                            </LinearLayout>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnReportsGoToEvents"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:layout_marginTop="16dp"
+                                android:text="@string/reports_btn_go_to_events"
+                                android:textAllCaps="false"
+                                android:textColor="@color/on_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="@color/primary"
+                                app:cornerRadius="12dp"
+                                app:icon="@drawable/ic_timer"
+                                app:iconGravity="textStart"
+                                app:iconTint="@color/on_primary" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Tarjeta Didáctica de Reglas de Cierre Automático (Stitch Pantalla 19) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        app:cardBackgroundColor="@color/surface_container_low"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="@color/outline_variant"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Cómo funciona el cierre automático"
+                                android:textColor="@color/primary"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="• Cierre sin intervención manual: Al iniciar la app se procesan en orden cronológico las semanas terminadas que tengan eventos finalizados.\n• Integridad histórica inmutable: Cada reporte y sus eventos conservan sus valores originales sin duplicarse.\n• Regla de frontera temporal: Un evento pertenece a la semana en que empezó, aunque finalice el lunes siguiente."
+                                android:textColor="@color/on_surface_variant"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- ================================================================ -->
+                <!-- CONTENIDO DE REPORTE SEMANAL SELECCIONADO (Stitch Pantalla 18)   -->
+                <!-- ================================================================ -->
+                <LinearLayout
+                    android:id="@+id/llReportsContentContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <!-- 3. Tarjeta de Resumen de la Semana Seleccionada (Stitch Pantalla 18) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardReportSelectedSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@color/surface_container_lowest"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="1dp"
+                        app:strokeColor="@color/outline_variant"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="top"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/reports_summary_card_label"
+                                        android:textColor="@color/on_surface_variant"
+                                        android:textSize="12sp" />
+
+                                    <TextView
+                                        android:id="@+id/tvReportSummaryWeekRange"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="06/10/2026 – 12/10/2026"
+                                        android:textColor="@color/primary"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_rounded_12"
+                                    android:backgroundTint="@color/surface_container_high"
+                                    android:paddingStart="10dp"
+                                    android:paddingTop="4dp"
+                                    android:paddingEnd="10dp"
+                                    android:paddingBottom="4dp"
+                                    android:text="7 días completados"
+                                    android:textColor="@color/on_surface_variant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Cuadrícula de 2 métricas: Registrado vs Sin registrar -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:baselineAligned="false"
+                                android:orientation="horizontal">
+
+                                <!-- Registrado -->
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="6dp"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/bg_rounded_12"
+                                    android:backgroundTint="@color/surface_container_low"
+                                    android:orientation="vertical"
+                                    android:padding="12dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="● Registrado"
+                                        android:textColor="@color/secondary"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvReportRegisteredHours"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="6dp"
+                                        android:text="0 h 00 min"
+                                        android:textColor="@color/primary"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvReportRegisteredPercent"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="0.0 % de la semana"
+                                        android:textColor="@color/secondary"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <!-- Sin registrar -->
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/bg_rounded_12"
+                                    android:backgroundTint="@color/surface_container_low"
+                                    android:orientation="vertical"
+                                    android:padding="12dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="⏳ Sin registrar"
+                                        android:textColor="@color/on_surface_variant"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvReportUnregisteredHours"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="6dp"
+                                        android:text="168 h 00 min"
+                                        android:textColor="@color/on_surface"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvReportUnregisteredPercent"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="100.0 % restante"
+                                        android:textColor="@color/on_surface_variant"
+                                        android:textSize="11sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Barra de progreso total sobre 168 horas -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/tvReportMonitoredLabel"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="● 0 h 00 min monitoreadas"
+                                    android:textColor="@color/primary"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Base total: 168 h (100%)"
+                                    android:textColor="@color/on_surface_variant"
+                                    android:textSize="11sp" />
+                            </LinearLayout>
+
+                            <com.google.android.material.progressindicator.LinearProgressIndicator
+                                android:id="@+id/pbReportTotalProgress"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:max="1000"
+                                android:progress="0"
+                                app:indicatorColor="@color/secondary"
+                                app:trackColor="@color/surface_container_highest"
+                                app:trackCornerRadius="5dp"
+                                app:trackThickness="9dp" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- 4. Sección de Distribución por Categoría + "Sin registrar" (Stitch Pantalla 18) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardReportCategoriesSection"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        app:cardBackgroundColor="@color/surface_container_lowest"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="1dp"
+                        app:strokeColor="@color/outline_variant"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/reports_category_section_title"
+                                        android:textColor="@color/primary"
+                                        android:textSize="17sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/reports_category_section_subtitle"
+                                        android:textColor="@color/on_surface_variant"
+                                        android:textSize="11sp" />
+                                </LinearLayout>
+
+                                <FrameLayout
+                                    android:layout_width="32dp"
+                                    android:layout_height="32dp"
+                                    android:background="@drawable/bg_circle"
+                                    android:backgroundTint="@color/surface_container">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="@null"
+                                        android:src="@drawable/ic_donut_chart"
+                                        app:tint="@color/on_surface_variant" />
+                                </FrameLayout>
+                            </LinearLayout>
+
+                            <!-- Contenedor dinámico para las filas de categorías históricas + "Sin registrar" -->
+                            <LinearLayout
+                                android:id="@+id/llReportCategoryRowsContainer"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:orientation="vertical" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:background="@drawable/bg_rounded_12"
+                                android:backgroundTint="@color/surface_container_low"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:padding="10dp">
+
+                                <ImageView
+                                    android:layout_width="15dp"
+                                    android:layout_height="15dp"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_info"
+                                    app:tint="@color/secondary" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:layout_weight="1"
+                                    android:text="Fórmula fija: (minutos categoría / 10 080 min) × 100 con 1 decimal exacto."
+                                    android:textColor="@color/on_surface_variant"
+                                    android:textSize="11sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- 5. Historial de Eventos de la Semana Seleccionada (Sección 9 y Stitch Pantalla 18) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/reports_events_section_title"
+                            android:textColor="@color/primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvReportEventsCountBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_pill"
+                            android:backgroundTint="@color/primary_fixed"
+                            android:paddingStart="10dp"
+                            android:paddingTop="3dp"
+                            android:paddingEnd="10dp"
+                            android:paddingBottom="3dp"
+                            android:text="0 registros archivados"
+                            android:textColor="@color/on_primary_fixed"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvReportWeekEvents"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:nestedScrollingEnabled="false" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
     </FrameLayout>
 
     <!-- ==================== FLOATING ACTION BUTTON (M3 Squircle 16dp) ==================== -->

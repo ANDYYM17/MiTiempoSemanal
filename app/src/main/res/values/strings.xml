@@ -5,24 +5,25 @@
     <string name="student_name">Nombre Apellido</string>
     <string name="student_greeting">¡Hola, Estudiante SENATI!</string>
     <string name="version_display_format">%1$s · v%2$s (%3$d)</string>
-    <string name="version_code_name">v0.3.0 (3)</string>
+    <string name="version_code_name">v1.0.0 (4)</string>
 
     <!-- Navegación Inferior -->
     <string name="nav_home">Inicio</string>
     <string name="nav_categories">Categorías</string>
     <string name="nav_tasks">Tareas</string>
     <string name="nav_events">Eventos</string>
+    <string name="nav_reports">Reportes</string>
 
     <!-- Pantalla 1: Inicio -->
-    <string name="sprint_active_badge">SPRINT 3 ACTIVO</string>
-    <string name="sprint_week_label">Semana 03/16</string>
+    <string name="sprint_active_badge">SPRINT 4 ACTIVO</string>
+    <string name="sprint_week_label">Semana 04/16</string>
     <string name="hero_title">Planificación y Control Semanal</string>
-    <string name="hero_subtitle">Organiza tu semana académica y personal registrando tus categorías, tareas y eventos en tiempo real.</string>
+    <string name="hero_subtitle">Organiza tu semana académica y personal registrando tus categorías, tareas, eventos y reportes históricos.</string>
     <string name="hero_goal">Meta sugerida: 5 bloques de estudio para hoy</string>
     <string name="quick_access_title">ACCESOS RÁPIDOS</string>
     <string name="quick_access_subtitle">Gestión directa</string>
     <string name="initial_categories_title">CATEGORÍAS INICIALES</string>
-    <string name="initial_categories_badge">SENATI v0.3</string>
+    <string name="initial_categories_badge">SENATI v1.0</string>
     <string name="upcoming_tasks_title">PRÓXIMAS TAREAS</string>
     <string name="view_all_tasks">Ver todas</string>
     <string name="btn_new_task">Nueva Tarea</string>
@@ -94,4 +95,17 @@
     <string name="weekly_panel_168h_label">Distribución de tus 168 horas</string>
     <string name="weekly_panel_unregistered_label">Sin registrar</string>
     <string name="weekly_panel_formula_note">Fórmula de cálculo: (minutos_categoría / 10 080 min) × 100 sobre las 168 h semanales</string>
+
+    <!-- Pantallas 18 y 19: Reportes Semanales y Cierre Automático (Sprint 4) -->
+    <string name="reports_header_title">Reportes</string>
+    <string name="reports_header_subtitle">Consulta cómo distribuiste tu tiempo en semanas anteriores archivadas.</string>
+    <string name="reports_spinner_label">Seleccionar semana</string>
+    <string name="reports_empty_title">Aún no hay reportes</string>
+    <string name="reports_empty_desc">Los reportes semanales se generan y archivan automáticamente al finalizar cada ciclo semanal de 168 horas (domingo 23:59:59).</string>
+    <string name="reports_empty_hint">Continúa registrando tus eventos diarios en la pestaña Eventos. Tu balance histórico aparecerá aquí al concluir la semana.</string>
+    <string name="reports_btn_go_to_events">Ir a Eventos actuales</string>
+    <string name="reports_summary_card_label">Resumen de la semana seleccionada</string>
+    <string name="reports_category_section_title">Tiempo por categoría</string>
+    <string name="reports_category_section_subtitle">Cálculo proporcional sobre 168 horas completas</string>
+    <string name="reports_events_section_title">Eventos de la semana</string>
 </resources>

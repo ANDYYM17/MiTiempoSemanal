@@ -160,4 +160,59 @@ class ExampleUnitTest {
         assertEquals(87.5, resumen21h.filaSinRegistrar.porcentajeSemanal, 0.0001)
         assertEquals("87.5 %", resumen21h.filaSinRegistrar.formatearPorcentaje())
     }
+
+    @Test
+    fun reporteSemanal_formateoRangoSpinnerYMetricasSobre168Horas_Sprint4() {
+        val detalles = listOf(
+            com.senati.mitiemposemanal.ayovera.model.DetalleReporteCategoria(
+                id = 1L,
+                reporteId = 10L,
+                categoriaId = 1L,
+                categoriaNombre = "Estudio",
+                segundosTotales = 21L * 3600L,
+                minutosTotales = 1260.0,
+                porcentaje = 12.5
+            ),
+            com.senati.mitiemposemanal.ayovera.model.DetalleReporteCategoria(
+                id = 2L,
+                reporteId = 10L,
+                categoriaId = 2L,
+                categoriaNombre = "Trabajo",
+                segundosTotales = 25L * 3600L + 12L * 60L, // 25 h 12 min = 1512 min = 15.0 %
+                minutosTotales = 1512.0,
+                porcentaje = 15.0
+            )
+        )
+
+        val segReg = (21L * 3600L) + (25L * 3600L + 12L * 60L) // 46 h 12 min = 2772 min = 27.5 %
+        val segSinReg = com.senati.mitiemposemanal.ayovera.model.ResumenSemanal.SEGUNDOS_SEMANA - segReg
+
+        val reporte = com.senati.mitiemposemanal.ayovera.model.ReporteSemanal(
+            id = 10L,
+            fechaInicioSemanaIso = "2026-10-05",
+            fechaFinSemanaIso = "2026-10-11",
+            segundosRegistrados = segReg,
+            minutosRegistrados = 2772.0,
+            porcentajeRegistrado = 27.5,
+            segundosSinRegistrar = segSinReg,
+            minutosSinRegistrar = 7308.0,
+            porcentajeSinRegistrar = 72.5,
+            totalEventos = 3,
+            fechaCierreIso = "2026-10-12T08:00:00",
+            detallesCategorias = detalles
+        )
+
+        assertEquals("05/10/2026 – 11/10/2026", reporte.formatearRangoSpinner())
+        assertEquals("46 h 12 min", reporte.formatearHorasRegistradas())
+        assertEquals("27.5 %", reporte.formatearPorcentajeRegistrado())
+        assertEquals("121 h 48 min", reporte.formatearHorasSinRegistrar())
+        assertEquals("72.5 %", reporte.formatearPorcentajeSinRegistrar())
+        assertEquals(275, reporte.obtenerProgresoRegistradoPorMil())
+
+        val detEstudio = reporte.detallesCategorias.first()
+        assertEquals("21 h 00 min", detEstudio.formatearHorasYMinutos())
+        assertEquals("12.5 %", detEstudio.formatearPorcentaje())
+        assertEquals(125, detEstudio.obtenerProgresoVisualPorMil())
+        assertTrue(detEstudio.esCategoriaInicial)
+    }
 }
